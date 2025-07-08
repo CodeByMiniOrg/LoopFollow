@@ -33,6 +33,12 @@ struct RemoteSettingsView: View {
                         isEnabled: viewModel.isTrioDevice
                     )
 
+                    remoteTypeRow(
+                        type: .loopAPNS,
+                        label: "Loop APNS",
+                        isEnabled: true
+                    )
+
                     Text("Nightscout is the only option for Loop.\nNightscout should be used for Trio 0.2.x or older.")
                         .font(.footnote)
                         .foregroundColor(.secondary)
@@ -195,6 +201,36 @@ struct RemoteSettingsView: View {
                     }
                 }
 
+                // MARK: - Loop APNS Settings
+
+                if viewModel.remoteType == .loopAPNS {
+                    Section(header: Text("Loop APNS Settings")) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Image(systemName: viewModel.loopAPNSSetup ? "checkmark.circle.fill" : "exclamationmark.circle")
+                                    .foregroundColor(viewModel.loopAPNSSetup ? .green : .orange)
+                                Text(viewModel.loopAPNSSetup ? "Setup Complete" : "Setup Incomplete")
+                                    .font(.headline)
+                                    .foregroundColor(viewModel.loopAPNSSetup ? .green : .orange)
+                            }
+
+                            if !viewModel.loopAPNSSetup {
+                                Text("Configure Loop APNS settings to send carbs and insulin directly to Loop app")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .padding(.vertical, 8)
+
+                        NavigationLink(destination: LoopAPNSSettingsView()) {
+                            HStack {
+                                Image(systemName: "gear")
+                                Text("Configure Loop APNS Settings")
+                            }
+                        }
+                    }
+                }
+
                 // MARK: - Shared Guardrails Section
 
                 if viewModel.remoteType != .none {
@@ -217,6 +253,11 @@ struct RemoteSettingsView: View {
         .sheet(isPresented: $viewModel.isShowingScanner) {
             SimpleQRCodeScannerView { result in
                 viewModel.handleQRCodeScanResult(result)
+            }
+        }
+        .sheet(isPresented: $viewModel.isShowingLoopAPNSScanner) {
+            SimpleQRCodeScannerView { result in
+                viewModel.handleLoopAPNSQRCodeScanResult(result)
             }
         }
         .preferredColorScheme(Storage.shared.forceDarkMode.value ? .dark : nil)

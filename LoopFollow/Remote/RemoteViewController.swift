@@ -62,6 +62,8 @@ class RemoteViewController: UIViewController {
                 let trioRemoteControlView = TrioRemoteControlView(viewModel: trioRemoteControlViewModel)
                 hostingController = UIHostingController(rootView: AnyView(trioRemoteControlView))
             }
+        } else if remoteType == .loopAPNS {
+            hostingController = UIHostingController(rootView: AnyView(LoopAPNSRemoteView()))
         } else {
             hostingController = UIHostingController(rootView: AnyView(Text("Please select a Remote Type in Settings.")))
         }
