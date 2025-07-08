@@ -1,11 +1,11 @@
 // LoopFollow
-// LoopRemoteCarbsView.swift
+// LoopAPNSCarbsView.swift
 // Created by codebymini
 
 import HealthKit
 import SwiftUI
 
-struct LoopRemoteCarbsView: View {
+struct LoopAPNSCarbsView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var carbsAmount = HKQuantity(unit: .gram(), doubleValue: 0.0)
     @State private var absorptionTime = HKQuantity(unit: .hour(), doubleValue: 3.0)
@@ -67,26 +67,6 @@ struct LoopRemoteCarbsView: View {
                                 .disableAutocorrection(true)
                         }
                     }
-
-                    Section(header: Text("Security")) {
-                        VStack(alignment: .leading) {
-                            Text("Current OTP Code")
-                                .font(.headline)
-                            if let otpCode = TOTPGenerator.extractOTPFromURL(Storage.shared.loopQrCodeURL.value) {
-                                Text(otpCode)
-                                    .font(.system(.body, design: .monospaced))
-                                    .foregroundColor(.green)
-                                    .padding(.vertical, 4)
-                                    .padding(.horizontal, 8)
-                                    .background(Color.green.opacity(0.1))
-                                    .cornerRadius(4)
-                            } else {
-                                Text("Invalid QR code URL")
-                                    .foregroundColor(.red)
-                            }
-                        }
-                    }
-
                     Section {
                         Button(action: sendCarbs) {
                             if isLoading {
@@ -102,13 +82,39 @@ struct LoopRemoteCarbsView: View {
                         .disabled(carbsAmount.doubleValue(for: .gram()) <= 0 || isLoading)
                         .frame(maxWidth: .infinity)
                     }
+
+                    Section(header: Text("Security")) {
+                        VStack(alignment: .leading) {
+                            Text("Current OTP Code")
+                                .font(.headline)
+                            if let otpCode = TOTPGenerator.extractOTPFromURL(Storage.shared.loopAPNSQrCodeURL.value) {
+                                Text(otpCode)
+                                    .font(.system(.body, design: .monospaced))
+                                    .foregroundColor(.green)
+                                    .padding(.vertical, 4)
+                                    .padding(.horizontal, 8)
+                                    .background(Color.green.opacity(0.1))
+                                    .cornerRadius(4)
+                            } else {
+                                Text("Invalid QR code URL")
+                                    .foregroundColor(.red)
+                            }
+                        }
+                    }
                 }
-                .navigationTitle("Remote Carbs")
+                .navigationTitle("Carbs")
                 .navigationBarTitleDisplayMode(.inline)
             }
-            .navigationBarItems(trailing: Button("Cancel") {
-                presentationMode.wrappedValue.dismiss()
-            })
+
+            .onAppear {
+                // Validate APNS setup
+                let apnsService = LoopAPNSService()
+                if !apnsService.validateSetup() {
+                    alertMessage = "Loop APNS setup is incomplete. Please configure all required fields in settings."
+                    alertType = .error
+                    showAlert = true
+                }
+            }
             .alert(isPresented: $showAlert) {
                 switch alertType {
                 case .success:
@@ -166,69 +172,83 @@ struct LoopRemoteCarbsView: View {
         isLoading = true
 
         // Extract OTP from QR code URL
-        guard let otpCode = TOTPGenerator.extractOTPFromURL(Storage.shared.loopQrCodeURL.value) else {
-            alertMessage = "Invalid QR code URL. Please re-scan the QR code."
+        guard let otpCode = TOTPGenerator.extractOTPFromURL(Storage.shared.loopAPNSQrCodeURL.value) else {
+            alertMessage = "Invalid QR code URL. Please re-scan the QR code in settings."
             alertType = .error
             isLoading = false
             showAlert = true
             return
         }
 
-        // Create the remote carbs notification payload using legacy format
-        var payload: [String: String] = [
-            "eventType": "Remote Carbs Entry",
-            "remoteCarbs": "\(carbsAmount.doubleValue(for: .gram()))",
-            "remoteAbsorption": "\(absorptionTime.doubleValue(for: .hour()))",
-            "otp": otpCode,
-        ]
+        // Create the APNS payload for carbs
+        let payload = LoopAPNSPayload(
+            type: .carbs,
+            carbsAmount: carbsAmount.doubleValue(for: .gram()),
+            absorptionTime: absorptionTime.doubleValue(for: .hour()),
+            foodType: foodType.isEmpty ? nil : foodType,
+            otp: otpCode
+        )
 
-        // Add food type if provided
-        if !foodType.isEmpty {
-            payload["foodType"] = foodType
-        }
-
-        // Send to Nightscout notifications endpoint
         Task {
             do {
-                let nightscoutURL = Storage.shared.url.value
-                let apiSecret = Storage.shared.loopApiSecret.value
-
-                let url = URL(string: "\(nightscoutURL)/api/v2/notifications/loop")!
-                var request = URLRequest(url: url)
-                request.httpMethod = "POST"
-                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                request.setValue(apiSecret.sha1, forHTTPHeaderField: "api-secret")
-
-                let jsonData = try JSONSerialization.data(withJSONObject: payload)
-                request.httpBody = jsonData
-
-                let (data, response) = try await URLSession.shared.data(for: request)
+                let apnsService = LoopAPNSService()
+                let success = try await apnsService.sendCarbsViaAPNS(payload: payload)
 
                 DispatchQueue.main.async {
                     isLoading = false
-
-                    if let httpResponse = response as? HTTPURLResponse,
-                       httpResponse.statusCode == 200
-                    {
+                    if success {
                         alertMessage = "Carbs sent successfully!"
                         alertType = .success
+                        LogManager.shared.log(
+                            category: .apns,
+                            message: "Carbs sent - Amount: \(carbsAmount.doubleValue(for: .gram()))g, Absorption: \(absorptionTime.doubleValue(for: .hour()))h"
+                        )
                     } else {
-                        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                        let responseText = String(data: data, encoding: .utf8) ?? "No response data"
-                        alertMessage = "Failed to send carbs. Status: \(statusCode), Response: \(responseText)"
+                        alertMessage = "Failed to send carbs. Check your Loop APNS configuration."
                         alertType = .error
+                        LogManager.shared.log(
+                            category: .apns,
+                            message: "Failed to send carbs"
+                        )
                     }
                     showAlert = true
                 }
             } catch {
-                print("[DEBUG] Error: \(error)")
                 DispatchQueue.main.async {
                     isLoading = false
                     alertMessage = "Error sending carbs: \(error.localizedDescription)"
                     alertType = .error
+                    LogManager.shared.log(
+                        category: .apns,
+                        message: "APNS carbs error: \(error.localizedDescription)"
+                    )
                     showAlert = true
                 }
             }
         }
+    }
+}
+
+// APNS Payload structure for carbs
+struct LoopAPNSPayload {
+    enum PayloadType {
+        case carbs
+        case bolus
+    }
+
+    let type: PayloadType
+    let carbsAmount: Double?
+    let absorptionTime: Double?
+    let foodType: String?
+    let bolusAmount: Double?
+    let otp: String
+
+    init(type: PayloadType, carbsAmount: Double? = nil, absorptionTime: Double? = nil, foodType: String? = nil, bolusAmount: Double? = nil, otp: String) {
+        self.type = type
+        self.carbsAmount = carbsAmount
+        self.absorptionTime = absorptionTime
+        self.foodType = foodType
+        self.bolusAmount = bolusAmount
+        self.otp = otp
     }
 }

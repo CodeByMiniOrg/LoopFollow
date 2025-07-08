@@ -33,7 +33,13 @@ struct RemoteSettingsView: View {
                         isEnabled: viewModel.isTrioDevice
                     )
 
-                    Text("Nightscout is the only option for Loop.\nNightscout should be used for Trio 0.2.x or older.")
+                    remoteTypeRow(
+                        type: .loopAPNS,
+                        label: "Loop APNS",
+                        isEnabled: true
+                    )
+
+                    Text("Nightscout should be used for Trio 0.2.x or older.")
                         .font(.footnote)
                         .foregroundColor(.secondary)
                 }
@@ -49,96 +55,6 @@ struct RemoteSettingsView: View {
                                 .disableAutocorrection(true)
                                 .multilineTextAlignment(.trailing)
                         }
-                    }
-                }
-
-                // MARK: - Loop Remote Setup Section
-
-                if viewModel.remoteType == .nightscout && device.value == "Loop" {
-                    Section(header: Text("Loop Remote Setup")) {
-                        VStack(alignment: .leading) {
-                            Text("Nightscout URL")
-                                .font(.headline)
-                            Text(Storage.shared.url.value.isEmpty ? "Not configured" : Storage.shared.url.value)
-                                .foregroundColor(Storage.shared.url.value.isEmpty ? .red : .primary)
-                                .font(.body)
-                        }
-
-                        VStack(alignment: .leading) {
-                            Text("API Secret")
-                                .font(.headline)
-                            TogglableSecureInput(
-                                placeholder: "Your Nightscout API secret",
-                                text: $viewModel.loopApiSecret,
-                                style: .singleLine
-                            )
-                            .autocapitalization(.none)
-                            .disableAutocorrection(true)
-                        }
-
-                        if viewModel.loopQrCodeURL.isEmpty {
-                            Button(action: {
-                                viewModel.isShowingScanner = true
-                            }) {
-                                HStack {
-                                    Image(systemName: "qrcode.viewfinder")
-                                    Text("Scan QR Code")
-                                }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                        }
-
-                        VStack(alignment: .leading) {
-                            Text("QR Code URL")
-                                .font(.headline)
-                            TextField("QR Code URL from Loop", text: $viewModel.loopQrCodeURL)
-                                .autocapitalization(.none)
-                                .disableAutocorrection(true)
-                        }
-
-                        if !viewModel.loopQrCodeURL.isEmpty {
-                            VStack(alignment: .leading) {
-                                Text("Current OTP Code")
-                                    .font(.headline)
-                                if let otpCode = TOTPGenerator.extractOTPFromURL(viewModel.loopQrCodeURL) {
-                                    Text(otpCode)
-                                        .font(.system(.body, design: .monospaced))
-                                        .foregroundColor(.green)
-                                        .padding(.vertical, 4)
-                                        .padding(.horizontal, 8)
-                                        .background(Color.green.opacity(0.1))
-                                        .cornerRadius(4)
-                                } else {
-                                    Text("Invalid QR code URL")
-                                        .foregroundColor(.red)
-                                }
-                            }
-                        }
-
-                        if let errorMessage = viewModel.errorMessage {
-                            Text(errorMessage)
-                                .foregroundColor(.red)
-                        }
-
-                        // Show setup status instead of manual save button
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Image(systemName: viewModel.loopRemoteSetup ? "checkmark.circle.fill" : "exclamationmark.circle")
-                                    .foregroundColor(viewModel.loopRemoteSetup ? .green : .orange)
-                                Text(viewModel.loopRemoteSetup ? "Setup Complete" : "Setup Incomplete")
-                                    .font(.headline)
-                                    .foregroundColor(viewModel.loopRemoteSetup ? .green : .orange)
-                            }
-
-                            if !viewModel.loopRemoteSetup {
-                                Text("Please ensure both API Secret and QR Code are configured")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        .padding(.vertical, 8)
                     }
                 }
 
@@ -195,6 +111,36 @@ struct RemoteSettingsView: View {
                     }
                 }
 
+                // MARK: - Loop APNS Settings
+
+                if viewModel.remoteType == .loopAPNS {
+                    Section(header: Text("Loop APNS Settings")) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Image(systemName: viewModel.loopAPNSSetup ? "checkmark.circle.fill" : "exclamationmark.circle")
+                                    .foregroundColor(viewModel.loopAPNSSetup ? .green : .orange)
+                                Text(viewModel.loopAPNSSetup ? "Setup Complete" : "Setup Incomplete")
+                                    .font(.headline)
+                                    .foregroundColor(viewModel.loopAPNSSetup ? .green : .orange)
+                            }
+
+                            if !viewModel.loopAPNSSetup {
+                                Text("Configure Loop APNS settings to send carbs and insulin directly to Loop app")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .padding(.vertical, 8)
+
+                        NavigationLink(destination: LoopAPNSSettingsView()) {
+                            HStack {
+                                Image(systemName: "gear")
+                                Text("Configure Loop APNS Settings")
+                            }
+                        }
+                    }
+                }
+
                 // MARK: - Shared Guardrails Section
 
                 if viewModel.remoteType != .none {
@@ -217,6 +163,11 @@ struct RemoteSettingsView: View {
         .sheet(isPresented: $viewModel.isShowingScanner) {
             SimpleQRCodeScannerView { result in
                 viewModel.handleQRCodeScanResult(result)
+            }
+        }
+        .sheet(isPresented: $viewModel.isShowingLoopAPNSScanner) {
+            SimpleQRCodeScannerView { result in
+                viewModel.handleLoopAPNSQRCodeScanResult(result)
             }
         }
         .preferredColorScheme(Storage.shared.forceDarkMode.value ? .dark : nil)
