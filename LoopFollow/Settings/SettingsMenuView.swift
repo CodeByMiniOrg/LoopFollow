@@ -107,6 +107,12 @@ struct SettingsMenuView: View {
                     {
                         settingsPath.value.append(Sheet.advanced)
                     }
+
+                    NavigationRow(title: "iCloud Sync",
+                                  icon: "icloud")
+                    {
+                        path.append(Sheet.iCloudSync)
+                    }
                 }
 
                 Section("Logging") {
@@ -276,6 +282,7 @@ private enum Sheet: Hashable, Identifiable {
     case remote
     case calendar, contact
     case advanced
+    case iCloudSync
     case viewLog
 
     var id: Self { self }
@@ -295,6 +302,7 @@ private enum Sheet: Hashable, Identifiable {
         case .calendar: CalendarSettingsView()
         case .contact: ContactSettingsView(viewModel: .init())
         case .advanced: AdvancedSettingsView(viewModel: .init())
+        case .iCloudSync: ICloudSettingsView()
         case .viewLog: LogView(viewModel: .init())
         }
     }

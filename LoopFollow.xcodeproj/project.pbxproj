@@ -376,6 +376,8 @@
 		FCFEEC9E2486E68E00402A7F /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCFEEC9D2486E68E00402A7F /* WebKit.framework */; };
 		FCFEECA02488157B00402A7F /* Chart.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCFEEC9F2488157B00402A7F /* Chart.swift */; };
 		FCFEECA2248857A600402A7F /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCFEECA1248857A600402A7F /* SettingsViewController.swift */; };
+		DDE75D2B2DE5E600007C1FC2 /* ICloudStorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE75D2A2DE5E600007C1FC2 /* ICloudStorageManager.swift */; };
+		DDE75D2D2DE5E610007C1FC3 /* ICloudSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE75D2C2DE5E610007C1FC3 /* ICloudSettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -766,6 +768,8 @@
 		FCFEEC9D2486E68E00402A7F /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		FCFEEC9F2488157B00402A7F /* Chart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chart.swift; sourceTree = "<group>"; };
 		FCFEECA1248857A600402A7F /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
+		DDE75D2A2DE5E600007C1FC2 /* ICloudStorageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudStorageManager.swift; sourceTree = "<group>"; };
+		DDE75D2C2DE5E610007C1FC3 /* ICloudSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudSettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -892,6 +896,7 @@
 				DD8316172DE3633D004467AA /* GeneralSettingsView.swift */,
 				DD50C74F2D0828800057AE6F /* ContactSettingsViewModel.swift */,
 				DD50C7522D0828D10057AE6F /* ContactSettingsView.swift */,
+				DDE75D2C2DE5E610007C1FC3 /* ICloudSettingsView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -1119,6 +1124,7 @@
 				DDD10F062C529DE800D76A8E /* Observable.swift */,
 				DD4878042C7B2C970048F05C /* Storage.swift */,
 				DD8316472DE49EE5004467AA /* Storage+Migrate.swift */,
+				DDE75D2A2DE5E600007C1FC2 /* ICloudStorageManager.swift */,
 			);
 			path = Storage;
 			sourceTree = "<group>";
@@ -2038,6 +2044,8 @@
 				DD0650EF2DCE96FF004D3B41 /* HighBGCondition.swift in Sources */,
 				DDC6CA472DD8D9010060EE25 /* PumpChangeAlarmEditor.swift in Sources */,
 				DD4878132C7B750D0048F05C /* TempTargetView.swift in Sources */,
+				DDE75D2B2DE5E600007C1FC2 /* ICloudStorageManager.swift in Sources */,
+				DDE75D2D2DE5E610007C1FC3 /* ICloudSettingsView.swift in Sources */,
 				DD0C0C682C48529400DBADDF /* Metric.swift in Sources */,
 				FCC6886D2489909D00A0279D /* AnyConvertible.swift in Sources */,
 				DDC6CA432DD8CED20060EE25 /* SensorAgeCondition.swift in Sources */,
