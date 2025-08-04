@@ -6,11 +6,6 @@ import Foundation
 import HealthKit
 import SwiftJWT
 
-struct APNsJWTClaims: Claims {
-    let iss: String
-    let iat: Date
-}
-
 class PushNotificationManager {
     private var deviceToken: String
     private var sharedSecret: String
