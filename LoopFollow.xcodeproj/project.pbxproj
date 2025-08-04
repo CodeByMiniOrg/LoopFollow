@@ -206,7 +206,9 @@
 		DDE75D232DE5E505007C1FC1 /* Glyph.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE75D222DE5E505007C1FC1 /* Glyph.swift */; };
 		DDE75D272DE5E539007C1FC1 /* ActionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE75D262DE5E539007C1FC1 /* ActionRow.swift */; };
 		DDE75D292DE5E56C007C1FC1 /* LinkRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE75D282DE5E56C007C1FC1 /* LinkRow.swift */; };
+		DDE75D2B2DE5E600007C1FC2 /* ICloudStorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE75D2A2DE5E600007C1FC2 /* ICloudStorageManager.swift */; };
 		DDE75D2B2DE5E613007C1FC1 /* NavigationRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE75D2A2DE5E613007C1FC1 /* NavigationRow.swift */; };
+		DDE75D2D2DE5E610007C1FC3 /* ICloudSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE75D2C2DE5E610007C1FC3 /* ICloudSettingsView.swift */; };
 		DDE75D2D2DE71401007C1FC1 /* TogglableSecureInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE75D2C2DE71401007C1FC1 /* TogglableSecureInput.swift */; };
 		DDEF503A2D31615000999A5D /* LogManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDEF50392D31614200999A5D /* LogManager.swift */; };
 		DDEF503C2D31BE2D00999A5D /* TaskScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDEF503B2D31BE2A00999A5D /* TaskScheduler.swift */; };
@@ -376,8 +378,6 @@
 		FCFEEC9E2486E68E00402A7F /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCFEEC9D2486E68E00402A7F /* WebKit.framework */; };
 		FCFEECA02488157B00402A7F /* Chart.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCFEEC9F2488157B00402A7F /* Chart.swift */; };
 		FCFEECA2248857A600402A7F /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCFEECA1248857A600402A7F /* SettingsViewController.swift */; };
-		DDE75D2B2DE5E600007C1FC2 /* ICloudStorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE75D2A2DE5E600007C1FC2 /* ICloudStorageManager.swift */; };
-		DDE75D2D2DE5E610007C1FC3 /* ICloudSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE75D2C2DE5E610007C1FC3 /* ICloudSettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -593,7 +593,9 @@
 		DDE75D222DE5E505007C1FC1 /* Glyph.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Glyph.swift; sourceTree = "<group>"; };
 		DDE75D262DE5E539007C1FC1 /* ActionRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionRow.swift; sourceTree = "<group>"; };
 		DDE75D282DE5E56C007C1FC1 /* LinkRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkRow.swift; sourceTree = "<group>"; };
+		DDE75D2A2DE5E600007C1FC2 /* ICloudStorageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudStorageManager.swift; sourceTree = "<group>"; };
 		DDE75D2A2DE5E613007C1FC1 /* NavigationRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationRow.swift; sourceTree = "<group>"; };
+		DDE75D2C2DE5E610007C1FC3 /* ICloudSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudSettingsView.swift; sourceTree = "<group>"; };
 		DDE75D2C2DE71401007C1FC1 /* TogglableSecureInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TogglableSecureInput.swift; sourceTree = "<group>"; };
 		DDEF50392D31614200999A5D /* LogManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogManager.swift; sourceTree = "<group>"; };
 		DDEF503B2D31BE2A00999A5D /* TaskScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskScheduler.swift; sourceTree = "<group>"; };
@@ -768,8 +770,6 @@
 		FCFEEC9D2486E68E00402A7F /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		FCFEEC9F2488157B00402A7F /* Chart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chart.swift; sourceTree = "<group>"; };
 		FCFEECA1248857A600402A7F /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
-		DDE75D2A2DE5E600007C1FC2 /* ICloudStorageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudStorageManager.swift; sourceTree = "<group>"; };
-		DDE75D2C2DE5E610007C1FC3 /* ICloudSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudSettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */

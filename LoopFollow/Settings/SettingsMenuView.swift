@@ -111,7 +111,7 @@ struct SettingsMenuView: View {
                     NavigationRow(title: "iCloud Sync",
                                   icon: "icloud")
                     {
-                        path.append(Sheet.iCloudSync)
+                        settingsPath.value.append(Sheet.iCloudSync)
                     }
                 }
 

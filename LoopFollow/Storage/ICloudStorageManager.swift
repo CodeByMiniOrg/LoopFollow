@@ -61,100 +61,47 @@ class ICloudStorageManager: ObservableObject {
     private func createStorageBackup() throws -> Data {
         let storage = Storage.shared
 
-        // Create a dictionary with only the most critical settings
+        // Create organized backup structure
         var backup: [String: Any] = [:]
 
         do {
-            LogManager.shared.log(category: .general, message: "Starting settings backup...")
-            // Core connection settings
-            backup["url"] = storage.url.value
-            backup["token"] = storage.token.value
+            LogManager.shared.log(category: .general, message: "Starting organized settings backup...")
 
+            // Connection Settings
+            backup["connection"] = createConnectionSettings(storage)
 
-            // Remote settings
-            backup["deviceToken"] = storage.deviceToken.value
-            backup["remoteType"] = storage.remoteType.value.rawValue
-            backup["sharedSecret"] = storage.sharedSecret.value
-            backup["productionEnvironment"] = storage.productionEnvironment.value
-            backup["apnsKey"] = storage.apnsKey.value
-            backup["teamId"] = storage.teamId.value
-            backup["keyId"] = storage.keyId.value
-            backup["bundleId"] = storage.bundleId.value
-            backup["user"] = storage.user.value
-            backup["loopAPNSSetup"] = storage.loopAPNSSetup.value
-            backup["loopAPNSQrCodeURL"] = storage.loopAPNSQrCodeURL.value
-            backup["loopAPNSDeviceToken"] = storage.loopAPNSDeviceToken.value
-            backup["loopAPNSBundleIdentifier"] = storage.loopAPNSBundleIdentifier.value
+            // Remote Settings
+            backup["remote"] = createRemoteSettings(storage)
 
+            // Core App Settings
+            backup["core"] = createCoreAppSettings(storage)
 
-            backup["maxBolus"] = try encodeHKQuantity(storage.maxBolus.value, expectedUnit: .internationalUnit())
-            backup["maxCarbs"] = try encodeHKQuantity(storage.maxCarbs.value, expectedUnit: .gram())
-            backup["maxProtein"] = try encodeHKQuantity(storage.maxProtein.value, expectedUnit: .gram())
-            backup["maxFat"] = try encodeHKQuantity(storage.maxFat.value, expectedUnit: .gram())
+            // UI Settings
+            backup["ui"] = createUISettings(storage)
 
-            // Core app settings
-            backup["units"] = storage.units.value
-            backup["device"] = storage.device.value
-            backup["nsWriteAuth"] = storage.nsWriteAuth.value
-            backup["nsAdminAuth"] = storage.nsAdminAuth.value
+            // Graph Settings
+            backup["graph"] = createGraphSettings(storage)
 
-            // UI settings
-            backup["appBadge"] = storage.appBadge.value
-            backup["colorBGText"] = storage.colorBGText.value
-            backup["forceDarkMode"] = storage.forceDarkMode.value
-            backup["showStats"] = storage.showStats.value
-            backup["useIFCC"] = storage.useIFCC.value
-            backup["showSmallGraph"] = storage.showSmallGraph.value
-            backup["screenlockSwitchState"] = storage.screenlockSwitchState.value
-            backup["showDisplayName"] = storage.showDisplayName.value
-            backup["forcePortraitMode"] = storage.forcePortraitMode.value
+            // Calendar Settings
+            backup["calendar"] = createCalendarSettings(storage)
 
-            // Graph settings
-            backup["showDots"] = storage.showDots.value
-            backup["showLines"] = storage.showLines.value
-            backup["showValues"] = storage.showValues.value
-            backup["showAbsorption"] = storage.showAbsorption.value
-            backup["showDIALines"] = storage.showDIALines.value
-            backup["show30MinLine"] = storage.show30MinLine.value
-            backup["show90MinLine"] = storage.show90MinLine.value
-            backup["showMidnightLines"] = storage.showMidnightLines.value
-            backup["smallGraphTreatments"] = storage.smallGraphTreatments.value
-            backup["smallGraphHeight"] = storage.smallGraphHeight.value
-            backup["predictionToLoad"] = storage.predictionToLoad.value
-            backup["minBasalScale"] = storage.minBasalScale.value
-            backup["minBGScale"] = storage.minBGScale.value
-            backup["lowLine"] = storage.lowLine.value
-            backup["highLine"] = storage.highLine.value
-            backup["downloadDays"] = storage.downloadDays.value
+            // Dexcom Share Settings
+            backup["dexcomShare"] = createDexcomShareSettings(storage)
 
-            // Calendar settings
-            backup["writeCalendarEvent"] = storage.writeCalendarEvent.value
-            backup["calendarIdentifier"] = storage.calendarIdentifier.value
-            backup["watchLine1"] = storage.watchLine1.value
-            backup["watchLine2"] = storage.watchLine2.value
+            // Advanced Settings
+            backup["advanced"] = createAdvancedSettings(storage)
 
-            // Dexcom Share settings
-            backup["shareUserName"] = storage.shareUserName.value
-            backup["sharePassword"] = storage.sharePassword.value
-            backup["shareServer"] = storage.shareServer.value
+            // Alarm Settings
+            backup["alarms"] = createAlarmSettings(storage)
 
-            // Chart settings
-            backup["chartScaleX"] = storage.chartScaleX.value
+            // Version Info
+            backup["version"] = createVersionInfo(storage)
 
-            // Advanced settings
-            backup["downloadTreatments"] = storage.downloadTreatments.value
-            backup["downloadPrediction"] = storage.downloadPrediction.value
-            backup["graphOtherTreatments"] = storage.graphOtherTreatments.value
-            backup["graphBasal"] = storage.graphBasal.value
-            backup["graphBolus"] = storage.graphBolus.value
-            backup["graphCarbs"] = storage.graphCarbs.value
-            backup["bgUpdateDelay"] = storage.bgUpdateDelay.value
-
-            // Add backup timestamp
+            // Add backup metadata
             backup["backupTimestamp"] = Date().timeIntervalSince1970
-            backup["backupVersion"] = "1.0"
+            backup["appVersion"] = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
 
-            LogManager.shared.log(category: .general, message: "Minimal settings added, attempting JSON serialization...")
+            LogManager.shared.log(category: .general, message: "Organized settings backup created, attempting JSON serialization...")
 
         } catch {
             LogManager.shared.log(category: .general, message: "Error during backup creation: \(error)")
@@ -168,6 +115,529 @@ class ICloudStorageManager: ObservableObject {
         } catch {
             LogManager.shared.log(category: .general, message: "JSON serialization failed: \(error)")
             throw error
+        }
+    }
+
+    // MARK: - Settings Group Creation Methods
+
+    /// Create connection settings group
+    private func createConnectionSettings(_ storage: Storage) -> [String: Any] {
+        return [
+            "url": storage.url.value,
+            "token": storage.token.value,
+            "device": storage.device.value,
+            "units": storage.units.value,
+            "nsWriteAuth": storage.nsWriteAuth.value,
+            "nsAdminAuth": storage.nsAdminAuth.value,
+        ]
+    }
+
+    /// Create remote settings group
+    private func createRemoteSettings(_ storage: Storage) -> [String: Any] {
+        return [
+            "remoteType": storage.remoteType.value.rawValue,
+            "deviceToken": storage.deviceToken.value,
+            "sharedSecret": storage.sharedSecret.value,
+            "productionEnvironment": storage.productionEnvironment.value,
+            "apnsKey": storage.apnsKey.value,
+            "teamId": storage.teamId.value,
+            "keyId": storage.keyId.value,
+            "bundleId": storage.bundleId.value,
+            "user": storage.user.value,
+            "loopAPNSQrCodeURL": storage.loopAPNSQrCodeURL.value,
+        ]
+    }
+
+    /// Create core app settings group
+    private func createCoreAppSettings(_ storage: Storage) -> [String: Any] {
+        return [
+            "maxBolus": try? encodeHKQuantity(storage.maxBolus.value, expectedUnit: .internationalUnit()),
+            "maxCarbs": try? encodeHKQuantity(storage.maxCarbs.value, expectedUnit: .gram()),
+            "maxProtein": try? encodeHKQuantity(storage.maxProtein.value, expectedUnit: .gram()),
+            "maxFat": try? encodeHKQuantity(storage.maxFat.value, expectedUnit: .gram()),
+            "mealWithBolus": storage.mealWithBolus.value,
+            "mealWithFatProtein": storage.mealWithFatProtein.value,
+            "backgroundRefreshType": storage.backgroundRefreshType.value.rawValue,
+            "debugLogLevel": storage.debugLogLevel.value,
+        ]
+    }
+
+    /// Create UI settings group
+    private func createUISettings(_ storage: Storage) -> [String: Any] {
+        return [
+            "appBadge": storage.appBadge.value,
+            "colorBGText": storage.colorBGText.value,
+            "forceDarkMode": storage.forceDarkMode.value,
+            "showStats": storage.showStats.value,
+            "useIFCC": storage.useIFCC.value,
+            "showSmallGraph": storage.showSmallGraph.value,
+            "screenlockSwitchState": storage.screenlockSwitchState.value,
+            "showDisplayName": storage.showDisplayName.value,
+            "forcePortraitMode": storage.forcePortraitMode.value,
+            "snoozerEmoji": storage.snoozerEmoji.value,
+            "hideInfoTable": storage.hideInfoTable.value,
+            "persistentNotification": storage.persistentNotification.value,
+            "alarmsPosition": storage.alarmsPosition.value.rawValue,
+            "remotePosition": storage.remotePosition.value.rawValue,
+            "nightscoutPosition": storage.nightscoutPosition.value.rawValue,
+        ]
+    }
+
+    /// Create graph settings group
+    private func createGraphSettings(_ storage: Storage) -> [String: Any] {
+        return [
+            "display": [
+                "showDots": storage.showDots.value,
+                "showLines": storage.showLines.value,
+                "showValues": storage.showValues.value,
+                "showAbsorption": storage.showAbsorption.value,
+                "showDIALines": storage.showDIALines.value,
+                "show30MinLine": storage.show30MinLine.value,
+                "show90MinLine": storage.show90MinLine.value,
+                "showMidnightLines": storage.showMidnightLines.value,
+                "smallGraphTreatments": storage.smallGraphTreatments.value,
+            ],
+            "scaling": [
+                "smallGraphHeight": storage.smallGraphHeight.value,
+                "predictionToLoad": storage.predictionToLoad.value,
+                "minBasalScale": storage.minBasalScale.value,
+                "minBGScale": storage.minBGScale.value,
+                "lowLine": storage.lowLine.value,
+                "highLine": storage.highLine.value,
+                "downloadDays": storage.downloadDays.value,
+                "chartScaleX": storage.chartScaleX.value,
+            ],
+        ]
+    }
+
+    /// Create calendar settings group
+    private func createCalendarSettings(_ storage: Storage) -> [String: Any] {
+        return [
+            "writeCalendarEvent": storage.writeCalendarEvent.value,
+            "calendarIdentifier": storage.calendarIdentifier.value,
+            "watchLine1": storage.watchLine1.value,
+            "watchLine2": storage.watchLine2.value,
+        ]
+    }
+
+    /// Create Dexcom Share settings group
+    private func createDexcomShareSettings(_ storage: Storage) -> [String: Any] {
+        return [
+            "shareUserName": storage.shareUserName.value,
+            "sharePassword": storage.sharePassword.value,
+            "shareServer": storage.shareServer.value,
+        ]
+    }
+
+    /// Create advanced settings group
+    private func createAdvancedSettings(_ storage: Storage) -> [String: Any] {
+        return [
+            "download": [
+                "downloadTreatments": storage.downloadTreatments.value,
+                "downloadPrediction": storage.downloadPrediction.value,
+                "bgUpdateDelay": storage.bgUpdateDelay.value,
+            ],
+            "graphing": [
+                "graphOtherTreatments": storage.graphOtherTreatments.value,
+                "graphBasal": storage.graphBasal.value,
+                "graphBolus": storage.graphBolus.value,
+                "graphCarbs": storage.graphCarbs.value,
+            ],
+            "speech": [
+                "speakBG": storage.speakBG.value,
+                "speakBGAlways": storage.speakBGAlways.value,
+                "speakLowBG": storage.speakLowBG.value,
+                "speakProactiveLowBG": storage.speakProactiveLowBG.value,
+                "speakFastDropDelta": storage.speakFastDropDelta.value,
+                "speakLowBGLimit": storage.speakLowBGLimit.value,
+                "speakHighBGLimit": storage.speakHighBGLimit.value,
+                "speakHighBG": storage.speakHighBG.value,
+                "speakLanguage": storage.speakLanguage.value,
+            ],
+            "contact": [
+                "contactTrend": storage.contactTrend.value.rawValue,
+                "contactDelta": storage.contactDelta.value.rawValue,
+                "contactEnabled": storage.contactEnabled.value,
+                "contactBackgroundColor": storage.contactBackgroundColor.value,
+                "contactTextColor": storage.contactTextColor.value,
+            ],
+            "insertTimes": [
+                "cageInsertTime": storage.cageInsertTime.value,
+                "sageInsertTime": storage.sageInsertTime.value,
+            ],
+        ]
+    }
+
+    /// Create alarm settings group
+    private func createAlarmSettings(_ storage: Storage) -> [String: Any] {
+        return [
+            "alarms": try? encodeAlarms(storage.alarms.value),
+            "configuration": try? encodeAlarmConfiguration(storage.alarmConfiguration.value),
+        ]
+    }
+
+    /// Create version info group
+    private func createVersionInfo(_ storage: Storage) -> [String: Any] {
+        return [
+            "cachedForVersion": storage.cachedForVersion.value,
+            "latestVersion": storage.latestVersion.value,
+            "latestVersionChecked": storage.latestVersionChecked.value?.timeIntervalSince1970,
+            "currentVersionBlackListed": storage.currentVersionBlackListed.value,
+            "lastBlacklistNotificationShown": storage.lastBlacklistNotificationShown.value?.timeIntervalSince1970,
+            "lastVersionUpdateNotificationShown": storage.lastVersionUpdateNotificationShown.value?.timeIntervalSince1970,
+            "lastExpirationNotificationShown": storage.lastExpirationNotificationShown.value?.timeIntervalSince1970,
+        ]
+    }
+
+    // MARK: - Settings Group Restore Methods
+
+    /// Restore connection settings
+    private func restoreConnectionSettings(_ storage: Storage, from data: [String: Any]) {
+        if let value = data["url"] as? String {
+            storage.url.value = value
+        }
+        if let value = data["token"] as? String {
+            storage.token.value = value
+        }
+        if let value = data["device"] as? String {
+            storage.device.value = value
+        }
+        if let value = data["units"] as? String {
+            storage.units.value = value
+        }
+    }
+
+    /// Restore remote settings
+    private func restoreRemoteSettings(_ storage: Storage, from data: [String: Any]) {
+        if let value = data["remoteType"] as? String, let remoteType = RemoteType(rawValue: value) {
+            storage.remoteType.value = remoteType
+        }
+        if let value = data["deviceToken"] as? String {
+            storage.deviceToken.value = value
+        }
+        if let value = data["sharedSecret"] as? String {
+            storage.sharedSecret.value = value
+        }
+        if let value = data["productionEnvironment"] as? Bool {
+            storage.productionEnvironment.value = value
+        }
+        if let value = data["apnsKey"] as? String {
+            storage.apnsKey.value = value
+        }
+        if let value = data["teamId"] as? String {
+            storage.teamId.value = value
+        }
+        if let value = data["keyId"] as? String {
+            storage.keyId.value = value
+        }
+        if let value = data["bundleId"] as? String {
+            storage.bundleId.value = value
+        }
+        if let value = data["user"] as? String {
+            storage.user.value = value
+        }
+        if let value = data["loopAPNSQrCodeURL"] as? String {
+            storage.loopAPNSQrCodeURL.value = value
+        }
+    }
+
+    /// Restore core app settings
+    private func restoreCoreAppSettings(_ storage: Storage, from data: [String: Any]) {
+        if let maxBolusData = data["maxBolus"] as? [String: Any],
+           let maxBolus = try? decodeHKQuantity(maxBolusData)
+        {
+            storage.maxBolus.value = maxBolus
+        }
+        if let maxCarbsData = data["maxCarbs"] as? [String: Any],
+           let maxCarbs = try? decodeHKQuantity(maxCarbsData)
+        {
+            storage.maxCarbs.value = maxCarbs
+        }
+        if let maxProteinData = data["maxProtein"] as? [String: Any],
+           let maxProtein = try? decodeHKQuantity(maxProteinData)
+        {
+            storage.maxProtein.value = maxProtein
+        }
+        if let maxFatData = data["maxFat"] as? [String: Any],
+           let maxFat = try? decodeHKQuantity(maxFatData)
+        {
+            storage.maxFat.value = maxFat
+        }
+        if let value = data["mealWithBolus"] as? Bool {
+            storage.mealWithBolus.value = value
+        }
+        if let value = data["mealWithFatProtein"] as? Bool {
+            storage.mealWithFatProtein.value = value
+        }
+        if let value = data["backgroundRefreshType"] as? String, let refreshType = BackgroundRefreshType(rawValue: value) {
+            storage.backgroundRefreshType.value = refreshType
+        }
+        if let value = data["debugLogLevel"] as? Bool {
+            storage.debugLogLevel.value = value
+        }
+    }
+
+    /// Restore UI settings
+    private func restoreUISettings(_ storage: Storage, from data: [String: Any]) {
+        if let value = data["appBadge"] as? Bool {
+            storage.appBadge.value = value
+        }
+        if let value = data["colorBGText"] as? Bool {
+            storage.colorBGText.value = value
+        }
+        if let value = data["forceDarkMode"] as? Bool {
+            storage.forceDarkMode.value = value
+        }
+        if let value = data["showStats"] as? Bool {
+            storage.showStats.value = value
+        }
+        if let value = data["useIFCC"] as? Bool {
+            storage.useIFCC.value = value
+        }
+        if let value = data["showSmallGraph"] as? Bool {
+            storage.showSmallGraph.value = value
+        }
+        if let value = data["screenlockSwitchState"] as? Bool {
+            storage.screenlockSwitchState.value = value
+        }
+        if let value = data["showDisplayName"] as? Bool {
+            storage.showDisplayName.value = value
+        }
+        if let value = data["forcePortraitMode"] as? Bool {
+            storage.forcePortraitMode.value = value
+        }
+        if let value = data["snoozerEmoji"] as? Bool {
+            storage.snoozerEmoji.value = value
+        }
+        if let value = data["hideInfoTable"] as? Bool {
+            storage.hideInfoTable.value = value
+        }
+        if let value = data["persistentNotification"] as? Bool {
+            storage.persistentNotification.value = value
+        }
+        if let value = data["alarmsPosition"] as? String, let position = TabPosition(rawValue: value) {
+            storage.alarmsPosition.value = position
+        }
+        if let value = data["remotePosition"] as? String, let position = TabPosition(rawValue: value) {
+            storage.remotePosition.value = position
+        }
+        if let value = data["nightscoutPosition"] as? String, let position = TabPosition(rawValue: value) {
+            storage.nightscoutPosition.value = position
+        }
+    }
+
+    /// Restore graph settings
+    private func restoreGraphSettings(_ storage: Storage, from data: [String: Any]) {
+        if let display = data["display"] as? [String: Any] {
+            if let value = display["showDots"] as? Bool {
+                storage.showDots.value = value
+            }
+            if let value = display["showLines"] as? Bool {
+                storage.showLines.value = value
+            }
+            if let value = display["showValues"] as? Bool {
+                storage.showValues.value = value
+            }
+            if let value = display["showAbsorption"] as? Bool {
+                storage.showAbsorption.value = value
+            }
+            if let value = display["showDIALines"] as? Bool {
+                storage.showDIALines.value = value
+            }
+            if let value = display["show30MinLine"] as? Bool {
+                storage.show30MinLine.value = value
+            }
+            if let value = display["show90MinLine"] as? Bool {
+                storage.show90MinLine.value = value
+            }
+            if let value = display["showMidnightLines"] as? Bool {
+                storage.showMidnightLines.value = value
+            }
+            if let value = display["smallGraphTreatments"] as? Bool {
+                storage.smallGraphTreatments.value = value
+            }
+        }
+
+        if let scaling = data["scaling"] as? [String: Any] {
+            if let value = scaling["smallGraphHeight"] as? Int {
+                storage.smallGraphHeight.value = value
+            }
+            if let value = scaling["predictionToLoad"] as? Double {
+                storage.predictionToLoad.value = value
+            }
+            if let value = scaling["minBasalScale"] as? Double {
+                storage.minBasalScale.value = value
+            }
+            if let value = scaling["minBGScale"] as? Double {
+                storage.minBGScale.value = value
+            }
+            if let value = scaling["lowLine"] as? Double {
+                storage.lowLine.value = value
+            }
+            if let value = scaling["highLine"] as? Double {
+                storage.highLine.value = value
+            }
+            if let value = scaling["downloadDays"] as? Int {
+                storage.downloadDays.value = value
+            }
+            if let value = scaling["chartScaleX"] as? Double {
+                storage.chartScaleX.value = value
+            }
+        }
+    }
+
+    /// Restore calendar settings
+    private func restoreCalendarSettings(_ storage: Storage, from data: [String: Any]) {
+        if let value = data["writeCalendarEvent"] as? Bool {
+            storage.writeCalendarEvent.value = value
+        }
+        if let value = data["calendarIdentifier"] as? String {
+            storage.calendarIdentifier.value = value
+        }
+        if let value = data["watchLine1"] as? String {
+            storage.watchLine1.value = value
+        }
+        if let value = data["watchLine2"] as? String {
+            storage.watchLine2.value = value
+        }
+    }
+
+    /// Restore Dexcom Share settings
+    private func restoreDexcomShareSettings(_ storage: Storage, from data: [String: Any]) {
+        if let value = data["shareUserName"] as? String {
+            storage.shareUserName.value = value
+        }
+        if let value = data["sharePassword"] as? String {
+            storage.sharePassword.value = value
+        }
+        if let value = data["shareServer"] as? String {
+            storage.shareServer.value = value
+        }
+    }
+
+    /// Restore advanced settings
+    private func restoreAdvancedSettings(_ storage: Storage, from data: [String: Any]) {
+        if let download = data["download"] as? [String: Any] {
+            if let value = download["downloadTreatments"] as? Bool {
+                storage.downloadTreatments.value = value
+            }
+            if let value = download["downloadPrediction"] as? Bool {
+                storage.downloadPrediction.value = value
+            }
+            if let value = download["bgUpdateDelay"] as? Int {
+                storage.bgUpdateDelay.value = value
+            }
+        }
+
+        if let graphing = data["graphing"] as? [String: Any] {
+            if let value = graphing["graphOtherTreatments"] as? Bool {
+                storage.graphOtherTreatments.value = value
+            }
+            if let value = graphing["graphBasal"] as? Bool {
+                storage.graphBasal.value = value
+            }
+            if let value = graphing["graphBolus"] as? Bool {
+                storage.graphBolus.value = value
+            }
+            if let value = graphing["graphCarbs"] as? Bool {
+                storage.graphCarbs.value = value
+            }
+        }
+
+        if let speech = data["speech"] as? [String: Any] {
+            if let value = speech["speakBG"] as? Bool {
+                storage.speakBG.value = value
+            }
+            if let value = speech["speakBGAlways"] as? Bool {
+                storage.speakBGAlways.value = value
+            }
+            if let value = speech["speakLowBG"] as? Bool {
+                storage.speakLowBG.value = value
+            }
+            if let value = speech["speakProactiveLowBG"] as? Bool {
+                storage.speakProactiveLowBG.value = value
+            }
+            if let value = speech["speakFastDropDelta"] as? Double {
+                storage.speakFastDropDelta.value = value
+            }
+            if let value = speech["speakLowBGLimit"] as? Double {
+                storage.speakLowBGLimit.value = value
+            }
+            if let value = speech["speakHighBGLimit"] as? Double {
+                storage.speakHighBGLimit.value = value
+            }
+            if let value = speech["speakHighBG"] as? Bool {
+                storage.speakHighBG.value = value
+            }
+            if let value = speech["speakLanguage"] as? String {
+                storage.speakLanguage.value = value
+            }
+        }
+
+        if let contact = data["contact"] as? [String: Any] {
+            if let value = contact["contactTrend"] as? String, let trend = ContactIncludeOption(rawValue: value) {
+                storage.contactTrend.value = trend
+            }
+            if let value = contact["contactDelta"] as? String, let delta = ContactIncludeOption(rawValue: value) {
+                storage.contactDelta.value = delta
+            }
+            if let value = contact["contactEnabled"] as? Bool {
+                storage.contactEnabled.value = value
+            }
+            if let value = contact["contactBackgroundColor"] as? String {
+                storage.contactBackgroundColor.value = value
+            }
+            if let value = contact["contactTextColor"] as? String {
+                storage.contactTextColor.value = value
+            }
+        }
+
+        if let insertTimes = data["insertTimes"] as? [String: Any] {
+            if let value = insertTimes["cageInsertTime"] as? TimeInterval {
+                storage.cageInsertTime.value = value
+            }
+            if let value = insertTimes["sageInsertTime"] as? TimeInterval {
+                storage.sageInsertTime.value = value
+            }
+        }
+    }
+
+    /// Restore alarm settings
+    private func restoreAlarmSettings(_ storage: Storage, from data: [String: Any]) {
+        if let alarmsData = data["alarms"] as? [[String: Any]],
+           let alarms = try? decodeAlarms(alarmsData)
+        {
+            storage.alarms.value = alarms
+        }
+        if let configData = data["configuration"] as? [String: Any],
+           let configuration = try? decodeAlarmConfiguration(configData)
+        {
+            storage.alarmConfiguration.value = configuration
+        }
+    }
+
+    /// Restore version info
+    private func restoreVersionInfo(_ storage: Storage, from data: [String: Any]) {
+        if let value = data["cachedForVersion"] as? String {
+            storage.cachedForVersion.value = value
+        }
+        if let value = data["latestVersion"] as? String {
+            storage.latestVersion.value = value
+        }
+        if let value = data["latestVersionChecked"] as? TimeInterval {
+            storage.latestVersionChecked.value = Date(timeIntervalSince1970: value)
+        }
+        if let value = data["currentVersionBlackListed"] as? Bool {
+            storage.currentVersionBlackListed.value = value
+        }
+        if let value = data["lastBlacklistNotificationShown"] as? TimeInterval {
+            storage.lastBlacklistNotificationShown.value = Date(timeIntervalSince1970: value)
+        }
+        if let value = data["lastVersionUpdateNotificationShown"] as? TimeInterval {
+            storage.lastVersionUpdateNotificationShown.value = Date(timeIntervalSince1970: value)
+        }
+        if let value = data["lastExpirationNotificationShown"] as? TimeInterval {
+            storage.lastExpirationNotificationShown.value = Date(timeIntervalSince1970: value)
         }
     }
 
@@ -187,7 +657,7 @@ class ICloudStorageManager: ObservableObject {
 
             // Add backup timestamp
             backup["backupTimestamp"] = Date().timeIntervalSince1970
-            backup["backupVersion"] = "1.0"
+            backup["appVersion"] = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
             backup["backupType"] = "alarms"
 
             LogManager.shared.log(category: .general, message: "Alarm settings added, attempting JSON serialization...")
@@ -215,19 +685,6 @@ class ICloudStorageManager: ObservableObject {
         return [
             "value": value,
             "unit": unitString,
-        ]
-    }
-
-    /// Encode BLEDevice for storage
-    private func encodeBLEDevice(_ device: BLEDevice) throws -> [String: Any] {
-        return [
-            "id": device.id.uuidString,
-            "name": device.name,
-            "rssi": device.rssi,
-            "isConnected": device.isConnected,
-            "advertisedServices": device.advertisedServices,
-            "lastSeen": device.lastSeen.timeIntervalSince1970,
-            "lastConnected": device.lastConnected?.timeIntervalSince1970,
         ]
     }
 
@@ -305,7 +762,7 @@ class ICloudStorageManager: ObservableObject {
         }
     }
 
-    /// Restore Storage from backup data (minimal settings only)
+    /// Restore Storage from backup data (organized structure)
     private func restoreStorageFromBackup(_ data: Data) throws {
         guard let backup = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw NSError(domain: "ICloudStorageManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid backup format"])
@@ -313,213 +770,54 @@ class ICloudStorageManager: ObservableObject {
 
         let storage = Storage.shared
 
-        // Restore core connection settings
-        if let value = backup["remoteType"] as? String, let remoteType = RemoteType(rawValue: value) {
-            storage.remoteType.value = remoteType
-        }
-        if let value = backup["deviceToken"] as? String {
-            storage.deviceToken.value = value
-        }
-        if let value = backup["sharedSecret"] as? String {
-            storage.sharedSecret.value = value
-        }
-        if let value = backup["productionEnvironment"] as? Bool {
-            storage.productionEnvironment.value = value
-        }
-        if let value = backup["apnsKey"] as? String {
-            storage.apnsKey.value = value
-        }
-        if let value = backup["teamId"] as? String {
-            storage.teamId.value = value
-        }
-        if let value = backup["keyId"] as? String {
-            storage.keyId.value = value
-        }
-        if let value = backup["bundleId"] as? String {
-            storage.bundleId.value = value
-        }
-        if let value = backup["user"] as? String {
-            storage.user.value = value
+        // Restore connection settings
+        if let connection = backup["connection"] as? [String: Any] {
+            restoreConnectionSettings(storage, from: connection)
         }
 
-        // Restore HKQuantities
-        if let maxBolusData = backup["maxBolus"] as? [String: Any] {
-            storage.maxBolus.value = try decodeHKQuantity(maxBolusData)
-        }
-        if let maxCarbsData = backup["maxCarbs"] as? [String: Any] {
-            storage.maxCarbs.value = try decodeHKQuantity(maxCarbsData)
-        }
-        if let maxProteinData = backup["maxProtein"] as? [String: Any] {
-            storage.maxProtein.value = try decodeHKQuantity(maxProteinData)
-        }
-        if let maxFatData = backup["maxFat"] as? [String: Any] {
-            storage.maxFat.value = try decodeHKQuantity(maxFatData)
+        // Restore remote settings
+        if let remote = backup["remote"] as? [String: Any] {
+            restoreRemoteSettings(storage, from: remote)
         }
 
         // Restore core app settings
-        if let value = backup["token"] as? String {
-            storage.token.value = value
-        }
-        if let value = backup["units"] as? String {
-            storage.units.value = value
-        }
-        if let value = backup["url"] as? String {
-            storage.url.value = value
-        }
-        if let value = backup["device"] as? String {
-            storage.device.value = value
-        }
-        if let value = backup["nsWriteAuth"] as? Bool {
-            storage.nsWriteAuth.value = value
-        }
-        if let value = backup["nsAdminAuth"] as? Bool {
-            storage.nsAdminAuth.value = value
+        if let core = backup["core"] as? [String: Any] {
+            restoreCoreAppSettings(storage, from: core)
         }
 
-        // Restore essential UI settings
-        if let value = backup["appBadge"] as? Bool {
-            storage.appBadge.value = value
-        }
-        if let value = backup["colorBGText"] as? Bool {
-            storage.colorBGText.value = value
-        }
-        if let value = backup["forceDarkMode"] as? Bool {
-            storage.forceDarkMode.value = value
-        }
-        if let value = backup["showStats"] as? Bool {
-            storage.showStats.value = value
-        }
-        if let value = backup["useIFCC"] as? Bool {
-            storage.useIFCC.value = value
-        }
-        if let value = backup["showSmallGraph"] as? Bool {
-            storage.showSmallGraph.value = value
-        }
-        if let value = backup["screenlockSwitchState"] as? Bool {
-            storage.screenlockSwitchState.value = value
-        }
-        if let value = backup["showDisplayName"] as? Bool {
-            storage.showDisplayName.value = value
-        }
-        if let value = backup["forcePortraitMode"] as? Bool {
-            storage.forcePortraitMode.value = value
+        // Restore UI settings
+        if let ui = backup["ui"] as? [String: Any] {
+            restoreUISettings(storage, from: ui)
         }
 
         // Restore graph settings
-        if let value = backup["showDots"] as? Bool {
-            storage.showDots.value = value
-        }
-        if let value = backup["showLines"] as? Bool {
-            storage.showLines.value = value
-        }
-        if let value = backup["showValues"] as? Bool {
-            storage.showValues.value = value
-        }
-        if let value = backup["showAbsorption"] as? Bool {
-            storage.showAbsorption.value = value
-        }
-        if let value = backup["showDIALines"] as? Bool {
-            storage.showDIALines.value = value
-        }
-        if let value = backup["show30MinLine"] as? Bool {
-            storage.show30MinLine.value = value
-        }
-        if let value = backup["show90MinLine"] as? Bool {
-            storage.show90MinLine.value = value
-        }
-        if let value = backup["showMidnightLines"] as? Bool {
-            storage.showMidnightLines.value = value
-        }
-        if let value = backup["smallGraphTreatments"] as? Bool {
-            storage.smallGraphTreatments.value = value
-        }
-        if let value = backup["smallGraphHeight"] as? Int {
-            storage.smallGraphHeight.value = value
-        }
-        if let value = backup["predictionToLoad"] as? Double {
-            storage.predictionToLoad.value = value
-        }
-        if let value = backup["minBasalScale"] as? Double {
-            storage.minBasalScale.value = value
-        }
-        if let value = backup["minBGScale"] as? Double {
-            storage.minBGScale.value = value
-        }
-        if let value = backup["lowLine"] as? Double {
-            storage.lowLine.value = value
-        }
-        if let value = backup["highLine"] as? Double {
-            storage.highLine.value = value
-        }
-        if let value = backup["downloadDays"] as? Int {
-            storage.downloadDays.value = value
+        if let graph = backup["graph"] as? [String: Any] {
+            restoreGraphSettings(storage, from: graph)
         }
 
         // Restore calendar settings
-        if let value = backup["writeCalendarEvent"] as? Bool {
-            storage.writeCalendarEvent.value = value
-        }
-        if let value = backup["calendarIdentifier"] as? String {
-            storage.calendarIdentifier.value = value
-        }
-        if let value = backup["watchLine1"] as? String {
-            storage.watchLine1.value = value
-        }
-        if let value = backup["watchLine2"] as? String {
-            storage.watchLine2.value = value
+        if let calendar = backup["calendar"] as? [String: Any] {
+            restoreCalendarSettings(storage, from: calendar)
         }
 
         // Restore Dexcom Share settings
-        if let value = backup["shareUserName"] as? String {
-            storage.shareUserName.value = value
-        }
-        if let value = backup["sharePassword"] as? String {
-            storage.sharePassword.value = value
-        }
-        if let value = backup["shareServer"] as? String {
-            storage.shareServer.value = value
-        }
-
-        // Restore chart settings
-        if let value = backup["chartScaleX"] as? Double {
-            storage.chartScaleX.value = value
+        if let dexcomShare = backup["dexcomShare"] as? [String: Any] {
+            restoreDexcomShareSettings(storage, from: dexcomShare)
         }
 
         // Restore advanced settings
-        if let value = backup["downloadTreatments"] as? Bool {
-            storage.downloadTreatments.value = value
-        }
-        if let value = backup["downloadPrediction"] as? Bool {
-            storage.downloadPrediction.value = value
-        }
-        if let value = backup["graphOtherTreatments"] as? Bool {
-            storage.graphOtherTreatments.value = value
-        }
-        if let value = backup["graphBasal"] as? Bool {
-            storage.graphBasal.value = value
-        }
-        if let value = backup["graphBolus"] as? Bool {
-            storage.graphBolus.value = value
-        }
-        if let value = backup["graphCarbs"] as? Bool {
-            storage.graphCarbs.value = value
-        }
-        if let value = backup["bgUpdateDelay"] as? Int {
-            storage.bgUpdateDelay.value = value
+        if let advanced = backup["advanced"] as? [String: Any] {
+            restoreAdvancedSettings(storage, from: advanced)
         }
 
-        // Restore Loop APNS settings
-        if let value = backup["loopAPNSSetup"] as? Bool {
-            storage.loopAPNSSetup.value = value
+        // Restore alarm settings
+        if let alarms = backup["alarms"] as? [String: Any] {
+            restoreAlarmSettings(storage, from: alarms)
         }
-        if let value = backup["loopAPNSQrCodeURL"] as? String {
-            storage.loopAPNSQrCodeURL.value = value
-        }
-        if let value = backup["loopAPNSDeviceToken"] as? String {
-            storage.loopAPNSDeviceToken.value = value
-        }
-        if let value = backup["loopAPNSBundleIdentifier"] as? String {
-            storage.loopAPNSBundleIdentifier.value = value
+
+        // Restore version info
+        if let version = backup["version"] as? [String: Any] {
+            restoreVersionInfo(storage, from: version)
         }
     }
 
@@ -559,37 +857,6 @@ class ICloudStorageManager: ObservableObject {
         }
 
         return HKQuantity(unit: unit, doubleValue: value)
-    }
-
-    /// Decode BLEDevice from storage
-    private func decodeBLEDevice(_ data: [String: Any]) throws -> BLEDevice {
-        guard let idString = data["id"] as? String,
-              let id = UUID(uuidString: idString),
-              let rssi = data["rssi"] as? Int,
-              let isConnected = data["isConnected"] as? Bool,
-              let lastSeenInterval = data["lastSeen"] as? TimeInterval
-        else {
-            throw NSError(domain: "ICloudStorageManager", code: 3, userInfo: [NSLocalizedDescriptionKey: "Invalid BLEDevice data"])
-        }
-
-        let name = data["name"] as? String
-        let advertisedServices = data["advertisedServices"] as? [String]
-        let lastConnected: Date?
-        if let lastConnectedInterval = data["lastConnected"] as? TimeInterval {
-            lastConnected = Date(timeIntervalSince1970: lastConnectedInterval)
-        } else {
-            lastConnected = nil
-        }
-
-        return BLEDevice(
-            id: id,
-            name: name,
-            rssi: rssi,
-            isConnected: isConnected,
-            advertisedServices: advertisedServices,
-            lastSeen: Date(timeIntervalSince1970: lastSeenInterval),
-            lastConnected: lastConnected
-        )
     }
 
     /// Decode Alarm from storage
@@ -695,6 +962,53 @@ class ICloudStorageManager: ObservableObject {
 
     // MARK: - Public Methods
 
+    /// Create organized JSON object for external use
+    func createOrganizedBackupJSON() -> [String: Any]? {
+        do {
+            let storage = Storage.shared
+
+            var backup: [String: Any] = [:]
+
+            // Connection Settings
+            backup["connection"] = createConnectionSettings(storage)
+
+            // Remote Settings
+            backup["remote"] = createRemoteSettings(storage)
+
+            // Core App Settings
+            backup["core"] = createCoreAppSettings(storage)
+
+            // UI Settings
+            backup["ui"] = createUISettings(storage)
+
+            // Graph Settings
+            backup["graph"] = createGraphSettings(storage)
+
+            // Calendar Settings
+            backup["calendar"] = createCalendarSettings(storage)
+
+            // Dexcom Share Settings
+            backup["dexcomShare"] = createDexcomShareSettings(storage)
+
+            // Advanced Settings
+            backup["advanced"] = createAdvancedSettings(storage)
+
+            // Alarm Settings
+            backup["alarms"] = createAlarmSettings(storage)
+
+            // Version Info
+            backup["version"] = createVersionInfo(storage)
+
+            // Add backup metadata
+            backup["backupTimestamp"] = Date().timeIntervalSince1970
+
+            return backup
+        } catch {
+            LogManager.shared.log(category: .general, message: "Failed to create organized backup JSON: \(error)")
+            return nil
+        }
+    }
+
     /// Check if iCloud is available
     var isICloudAvailable: Bool {
         return FileManager.default.ubiquityIdentityToken != nil
@@ -720,7 +1034,7 @@ class ICloudStorageManager: ObservableObject {
             timestamp = nil
         }
 
-        let version = backup["backupVersion"] as? String
+        let version = backup["appVersion"] as? String
 
         return (timestamp, version)
     }
