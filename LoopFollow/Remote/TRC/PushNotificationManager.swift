@@ -32,13 +32,59 @@ class PushNotificationManager {
         bundleId = Storage.shared.bundleId.value
     }
 
+    private func createReturnNotificationInfo() -> PushMessage.ReturnNotificationInfo? {
+        let loopFollowDeviceToken = Observable.shared.loopFollowDeviceToken.value
+
+        guard !loopFollowDeviceToken.isEmpty else {
+            return nil
+        }
+
+        // Get the LoopFollow Team ID from BuildDetails.
+        guard let loopFollowTeamID = BuildDetails.default.teamID, !loopFollowTeamID.isEmpty else {
+            LogManager.shared.log(category: .apns, message: "LoopFollow Team ID not found in BuildDetails.plist. Cannot create return notification info.")
+            return nil
+        }
+
+        let teamIdsAreDifferent = loopFollowTeamID != teamId
+
+        let keyIdForReturn: String
+        let apnsKeyForReturn: String
+
+        if teamIdsAreDifferent {
+            // Team IDs differ, so we MUST use the separate return credentials from storage.
+            keyIdForReturn = Storage.shared.returnKeyId.value
+            apnsKeyForReturn = Storage.shared.returnApnsKey.value
+        } else {
+            // Team IDs are the same, so we can use the primary credentials.
+            keyIdForReturn = keyId
+            apnsKeyForReturn = apnsKey
+        }
+
+        // Ensure we have the necessary credentials before proceeding
+        // Note: The teamId for the return message is ALWAYS the loopFollowTeamID.
+        guard !keyIdForReturn.isEmpty, !apnsKeyForReturn.isEmpty else {
+            LogManager.shared.log(category: .apns, message: "Missing required return APNS credentials. Check Remote Settings.")
+            return nil
+        }
+
+        return PushMessage.ReturnNotificationInfo(
+            productionEnvironment: BuildDetails.default.isTestFlightBuild(),
+            deviceToken: loopFollowDeviceToken,
+            bundleId: Bundle.main.bundleIdentifier ?? "",
+            teamId: loopFollowTeamID,
+            keyId: keyIdForReturn,
+            apnsKey: apnsKeyForReturn
+        )
+    }
+
     func sendOverridePushNotification(override: ProfileManager.TrioOverride, completion: @escaping (Bool, String?) -> Void) {
         let message = PushMessage(
             user: user,
             commandType: .startOverride,
             sharedSecret: sharedSecret,
             timestamp: Date().timeIntervalSince1970,
-            overrideName: override.name
+            overrideName: override.name,
+            returnNotification: createReturnNotificationInfo()
         )
 
         sendPushNotification(message: message, completion: completion)
@@ -50,7 +96,8 @@ class PushNotificationManager {
             commandType: .cancelOverride,
             sharedSecret: sharedSecret,
             timestamp: Date().timeIntervalSince1970,
-            overrideName: nil
+            overrideName: nil,
+            returnNotification: createReturnNotificationInfo()
         )
 
         sendPushNotification(message: message, completion: completion)
@@ -64,7 +111,8 @@ class PushNotificationManager {
             commandType: .bolus,
             bolusAmount: bolusAmount,
             sharedSecret: sharedSecret,
-            timestamp: Date().timeIntervalSince1970
+            timestamp: Date().timeIntervalSince1970,
+            returnNotification: createReturnNotificationInfo()
         )
 
         sendPushNotification(message: message, completion: completion)
@@ -81,7 +129,8 @@ class PushNotificationManager {
             target: targetValue,
             duration: durationValue,
             sharedSecret: sharedSecret,
-            timestamp: Date().timeIntervalSince1970
+            timestamp: Date().timeIntervalSince1970,
+            returnNotification: createReturnNotificationInfo()
         )
 
         sendPushNotification(message: message, completion: completion)
@@ -92,7 +141,8 @@ class PushNotificationManager {
             user: user,
             commandType: .cancelTempTarget,
             sharedSecret: sharedSecret,
-            timestamp: Date().timeIntervalSince1970
+            timestamp: Date().timeIntervalSince1970,
+            returnNotification: createReturnNotificationInfo()
         )
 
         sendPushNotification(message: message, completion: completion)
@@ -137,7 +187,8 @@ class PushNotificationManager {
             fat: fatValue,
             sharedSecret: sharedSecret,
             timestamp: Date().timeIntervalSince1970,
-            scheduledTime: scheduledTimeInterval
+            scheduledTime: scheduledTimeInterval,
+            returnNotification: createReturnNotificationInfo()
         )
 
         sendPushNotification(message: message, completion: completion)
