@@ -36,15 +36,15 @@ struct RemoteSettingsView: View {
                 )
 
                 remoteTypeRow(
-                    type: .trc,
-                    label: "Trio Remote Control",
-                    isEnabled: viewModel.isTrioDevice
-                )
-
-                remoteTypeRow(
                     type: .loopAPNS,
                     label: "Loop Remote Control",
                     isEnabled: viewModel.isLoopDevice
+                )
+
+                remoteTypeRow(
+                    type: .trc,
+                    label: "Trio Remote Control",
+                    isEnabled: viewModel.isTrioDevice
                 )
 
                 remoteTypeRow(
@@ -56,6 +56,18 @@ struct RemoteSettingsView: View {
                 Text("Nightscout should be used for Trio 0.2.x.")
                     .font(.footnote)
                     .foregroundColor(.secondary)
+            }
+
+            // MARK: - Meal Section (for TRC only)
+
+            if viewModel.remoteType == .trc {
+                Section(header: Text("Meal Settings")) {
+                    Toggle("Meal with Bolus", isOn: $viewModel.mealWithBolus)
+                        .toggleStyle(SwitchToggleStyle())
+
+                    Toggle("Meal with Fat/Protein", isOn: $viewModel.mealWithFatProtein)
+                        .toggleStyle(SwitchToggleStyle())
+                }
             }
 
             // MARK: - Guardrails Section (shown for both TRC and Loop)
@@ -109,16 +121,6 @@ struct RemoteSettingsView: View {
                         )
                         .frame(minHeight: 110)
                     }
-                }
-
-                // MARK: - Meal Section
-
-                Section(header: Text("Meal Settings")) {
-                    Toggle("Meal with Bolus", isOn: $viewModel.mealWithBolus)
-                        .toggleStyle(SwitchToggleStyle())
-
-                    Toggle("Meal with Fat/Protein", isOn: $viewModel.mealWithFatProtein)
-                        .toggleStyle(SwitchToggleStyle())
                 }
 
                 // MARK: - Debug / Info
@@ -318,7 +320,7 @@ struct RemoteSettingsView: View {
                 Spacer()
                 TextFieldWithToolBar(
                     quantity: $viewModel.maxBolus,
-                    maxLength: 4,
+                    maxLength: 5,
                     unit: HKUnit.internationalUnit(),
                     allowDecimalSeparator: true,
                     minValue: HKQuantity(unit: .internationalUnit(), doubleValue: 0),
