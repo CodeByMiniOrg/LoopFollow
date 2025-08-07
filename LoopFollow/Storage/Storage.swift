@@ -168,6 +168,14 @@ class Storage {
 
     var loopAPNSQrCodeURL = StorageValue<String>(key: "loopAPNSQrCodeURL", defaultValue: "")
 
+    // MARK: - SMS Remote Settings
+
+    var smsEnabled = StorageValue<Bool>(key: "smsEnabled", defaultValue: false)
+    var smsPhoneNumber = StorageValue<String>(key: "smsPhoneNumber", defaultValue: "")
+    var smsQrCodeURL = StorageValue<String>(key: "smsQrCodeURL", defaultValue: "")
+    var smsBolusDelayMinutes = StorageValue<Int>(key: "smsBolusDelayMinutes", defaultValue: 15)
+    var smsLastBolusTime = StorageValue<Date?>(key: "smsLastBolusTime", defaultValue: nil)
+
     static let shared = Storage()
     private init() {}
 }

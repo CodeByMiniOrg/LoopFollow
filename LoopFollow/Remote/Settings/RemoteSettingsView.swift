@@ -48,6 +48,12 @@ struct RemoteSettingsView: View {
                 )
 
                 remoteTypeRow(
+                    type: .sms,
+                    label: "Android APS SMS",
+                    isEnabled: true
+                )
+
+                remoteTypeRow(
                     type: .nightscout,
                     label: "Nightscout",
                     isEnabled: viewModel.isTrioDevice
@@ -70,9 +76,7 @@ struct RemoteSettingsView: View {
                 }
             }
 
-            // MARK: - Guardrails Section (shown for both TRC and Loop)
-
-            if viewModel.remoteType == .trc || viewModel.remoteType == .loopAPNS {
+            if viewModel.remoteType == .trc || viewModel.remoteType == .loopAPNS || viewModel.remoteType == .sms {
                 guardrailsSection
             }
 
@@ -229,6 +233,77 @@ struct RemoteSettingsView: View {
                     }
                 }
             }
+
+            // MARK: - SMS Settings
+
+            if viewModel.remoteType == .sms {
+                Section(header: Text("SMS Configuration")) {
+                    HStack {
+                        Text("Phone Number")
+                        TextField("+1234567890", text: $viewModel.smsPhoneNumber)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .keyboardType(.phonePad)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                    }
+
+                    HStack {
+                        Text("QR Code URL")
+                        TextField("Enter QR code URL or scan from AndroidAPS", text: $viewModel.smsQrCodeURL)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                    }
+
+                    Button("Scan QR Code") {
+                        viewModel.isShowingSMSScanner = true
+                    }
+                    .foregroundColor(.blue)
+
+                    HStack {
+                        Text("Bolus Delay (minutes)")
+                        Stepper(value: $viewModel.smsBolusDelayMinutes, in: 5 ... 60, step: 5) {
+                            Text("\(viewModel.smsBolusDelayMinutes)")
+                        }
+                    }
+
+                    Text("The QR code can be found in AndroidAPS Settings > SMS Commands > QR Code")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                if let errorMessage = viewModel.smsErrorMessage, !errorMessage.isEmpty {
+                    Section {
+                        Text(errorMessage)
+                            .foregroundColor(.red)
+                            .font(.caption)
+                    }
+                }
+
+                Section(header: Text("Debug / Info")) {
+                    Text("Phone Number: \(viewModel.smsPhoneNumber.isEmpty ? "Not configured" : viewModel.smsPhoneNumber)")
+                    Text("QR Code URL: \(viewModel.smsQrCodeURL.isEmpty ? "Not configured" : "Configured")")
+
+                    if let otpCode = TOTPGenerator.extractOTPFromURL(Storage.shared.smsQrCodeURL.value) {
+                        HStack {
+                            Text("Current TOTP Code:")
+                            Text(otpCode)
+                                .font(.system(.body, design: .monospaced))
+                                .foregroundColor(.green)
+                                .padding(.vertical, 2)
+                                .padding(.horizontal, 6)
+                                .background(Color.green.opacity(0.1))
+                                .cornerRadius(4)
+                            Text("(" + (otpTimeRemaining.map { "\($0)s left" } ?? "-") + ")")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    } else {
+                        Text("TOTP Code: Invalid QR code URL")
+                            .foregroundColor(.red)
+                    }
+                }
+            }
         }
         .alert(isPresented: $showAlert) {
             switch alertType {
@@ -245,6 +320,11 @@ struct RemoteSettingsView: View {
         .sheet(isPresented: $viewModel.isShowingLoopAPNSScanner) {
             SimpleQRCodeScannerView { result in
                 viewModel.handleLoopAPNSQRCodeScanResult(result)
+            }
+        }
+        .sheet(isPresented: $viewModel.isShowingSMSScanner) {
+            SimpleQRCodeScannerView { result in
+                viewModel.handleSMSQRCodeScanResult(result)
             }
         }
         .onAppear {
