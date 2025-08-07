@@ -8,4 +8,5 @@ enum RemoteType: String, Codable {
     case nightscout = "Nightscout"
     case trc = "Trio Remote Control"
     case loopAPNS = "Loop APNS"
+    case sms = "Android APS SMS"
 }

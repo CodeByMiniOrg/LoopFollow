@@ -29,6 +29,14 @@ class RemoteSettingsViewModel: ObservableObject {
     @Published var isShowingLoopAPNSScanner: Bool = false
     @Published var loopAPNSErrorMessage: String?
 
+    // MARK: - SMS Setup Properties
+
+    @Published var smsPhoneNumber: String
+    @Published var smsQrCodeURL: String
+    @Published var smsBolusDelayMinutes: Int
+    @Published var isShowingSMSScanner: Bool = false
+    @Published var smsErrorMessage: String?
+
     // MARK: - Computed property for Loop APNS Setup validation
 
     var loopAPNSSetup: Bool {
@@ -38,6 +46,12 @@ class RemoteSettingsViewModel: ObservableObject {
             !loopAPNSQrCodeURL.isEmpty &&
             !Storage.shared.deviceToken.value.isEmpty &&
             !Storage.shared.bundleId.value.isEmpty
+    }
+
+    // MARK: - Computed property for SMS Setup validation
+
+    var smsSetup: Bool {
+        !smsPhoneNumber.isEmpty && !smsQrCodeURL.isEmpty
     }
 
     private var storage = Storage.shared
@@ -60,6 +74,11 @@ class RemoteSettingsViewModel: ObservableObject {
         loopDeveloperTeamId = storage.teamId.value ?? ""
         loopAPNSQrCodeURL = storage.loopAPNSQrCodeURL.value
         productionEnvironment = storage.productionEnvironment.value
+
+        // Initialize SMS properties
+        smsPhoneNumber = storage.smsPhoneNumber.value
+        smsQrCodeURL = storage.smsQrCodeURL.value
+        smsBolusDelayMinutes = storage.smsBolusDelayMinutes.value
 
         setupBindings()
     }
@@ -150,6 +169,22 @@ class RemoteSettingsViewModel: ObservableObject {
             .dropFirst()
             .sink { [weak self] in self?.storage.productionEnvironment.value = $0 }
             .store(in: &cancellables)
+
+        // SMS bindings
+        $smsPhoneNumber
+            .dropFirst()
+            .sink { [weak self] in self?.storage.smsPhoneNumber.value = $0 }
+            .store(in: &cancellables)
+
+        $smsQrCodeURL
+            .dropFirst()
+            .sink { [weak self] in self?.storage.smsQrCodeURL.value = $0 }
+            .store(in: &cancellables)
+
+        $smsBolusDelayMinutes
+            .dropFirst()
+            .sink { [weak self] in self?.storage.smsBolusDelayMinutes.value = $0 }
+            .store(in: &cancellables)
     }
 
     func handleLoopAPNSQRCodeScanResult(_ result: Result<String, Error>) {
@@ -162,6 +197,19 @@ class RemoteSettingsViewModel: ObservableObject {
                 self.loopAPNSErrorMessage = "Scanning failed: \(error.localizedDescription)"
             }
             self.isShowingLoopAPNSScanner = false
+        }
+    }
+
+    func handleSMSQRCodeScanResult(_ result: Result<String, Error>) {
+        DispatchQueue.main.async {
+            switch result {
+            case let .success(code):
+                self.smsQrCodeURL = code
+                LogManager.shared.log(category: .sms, message: "SMS QR code scanned: \(code)")
+            case let .failure(error):
+                self.smsErrorMessage = "Scanning failed: \(error.localizedDescription)"
+            }
+            self.isShowingSMSScanner = false
         }
     }
 }

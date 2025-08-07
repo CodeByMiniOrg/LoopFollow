@@ -15,6 +15,17 @@
 		6541341C2E1DC28000BDBE08 /* DateExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6541341B2E1DC28000BDBE08 /* DateExtensions.swift */; };
 		6584B1012E4A263900135D4D /* TOTPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6584B1002E4A263900135D4D /* TOTPService.swift */; };
 		65E8A2862E44B0300065037B /* VolumeButtonHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65E8A2852E44B0300065037B /* VolumeButtonHandler.swift */; };
+		6541341C2E1DC28000BDBE08 /* DateExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6541341B2E1DC28000BDBE08 /* DateExtensions.swift */; };
+		65E8A2BE2E44F6220065037B /* SMSRemoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65E8A2B82E44F6220065037B /* SMSRemoteView.swift */; };
+		65E8A2C62E44FAEF0065037B /* SMSStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65E8A2C42E44FAEF0065037B /* SMSStatusView.swift */; };
+		65E8A2C72E44FAEF0065037B /* SMSTargetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65E8A2C52E44FAEF0065037B /* SMSTargetView.swift */; };
+		65E8A2C82E44FAEF0065037B /* SMSCarbsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65E8A2C22E44FAEF0065037B /* SMSCarbsView.swift */; };
+		65E8A2C92E44FAEF0065037B /* SMSRemoteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65E8A2C32E44FAEF0065037B /* SMSRemoteService.swift */; };
+		65E8A2CF2E44FBEE0065037B /* SMSBGView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65E8A2CA2E44FBEE0065037B /* SMSBGView.swift */; };
+		65E8A2D02E44FBEE0065037B /* SMSLoopView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65E8A2CC2E44FBEE0065037B /* SMSLoopView.swift */; };
+		65E8A2D12E44FBEE0065037B /* SMSBolusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65E8A2CB2E44FBEE0065037B /* SMSBolusView.swift */; };
+		65E8A2D22E44FBEE0065037B /* SMSPumpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65E8A2CE2E44FBEE0065037B /* SMSPumpView.swift */; };
+		65E8A2D32E44FBEE0065037B /* SMSProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65E8A2CD2E44FBEE0065037B /* SMSProfileView.swift */; };
 		DD0247592DB2E89600FCADF6 /* AlarmCondition.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0247582DB2E89600FCADF6 /* AlarmCondition.swift */; };
 		DD0247712DB4337700FCADF6 /* BuildExpireCondition.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD02475B2DB2E8FB00FCADF6 /* BuildExpireCondition.swift */; };
 		DD0650A92DCA8A10004D3B41 /* AlarmBGSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0650A82DCA8A10004D3B41 /* AlarmBGSection.swift */; };
@@ -400,6 +411,17 @@
 		6541341B2E1DC28000BDBE08 /* DateExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateExtensions.swift; sourceTree = "<group>"; };
 		6584B1002E4A263900135D4D /* TOTPService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TOTPService.swift; sourceTree = "<group>"; };
 		65E8A2852E44B0300065037B /* VolumeButtonHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeButtonHandler.swift; sourceTree = "<group>"; };
+		6541341B2E1DC28000BDBE08 /* DateExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateExtensions.swift; sourceTree = "<group>"; };
+		65E8A2B82E44F6220065037B /* SMSRemoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMSRemoteView.swift; sourceTree = "<group>"; };
+		65E8A2C22E44FAEF0065037B /* SMSCarbsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMSCarbsView.swift; sourceTree = "<group>"; };
+		65E8A2C32E44FAEF0065037B /* SMSRemoteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMSRemoteService.swift; sourceTree = "<group>"; };
+		65E8A2C42E44FAEF0065037B /* SMSStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMSStatusView.swift; sourceTree = "<group>"; };
+		65E8A2C52E44FAEF0065037B /* SMSTargetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMSTargetView.swift; sourceTree = "<group>"; };
+		65E8A2CA2E44FBEE0065037B /* SMSBGView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMSBGView.swift; sourceTree = "<group>"; };
+		65E8A2CB2E44FBEE0065037B /* SMSBolusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMSBolusView.swift; sourceTree = "<group>"; };
+		65E8A2CC2E44FBEE0065037B /* SMSLoopView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMSLoopView.swift; sourceTree = "<group>"; };
+		65E8A2CD2E44FBEE0065037B /* SMSProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMSProfileView.swift; sourceTree = "<group>"; };
+		65E8A2CE2E44FBEE0065037B /* SMSPumpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMSPumpView.swift; sourceTree = "<group>"; };
 		A7D55B42A22051DAD69E89D0 /* Pods_LoopFollow.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_LoopFollow.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD0247582DB2E89600FCADF6 /* AlarmCondition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmCondition.swift; sourceTree = "<group>"; };
 		DD02475B2DB2E8FB00FCADF6 /* BuildExpireCondition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildExpireCondition.swift; sourceTree = "<group>"; };
@@ -799,6 +821,23 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		65E8A2BB2E44F6220065037B /* SMS */ = {
+			isa = PBXGroup;
+			children = (
+				65E8A2CA2E44FBEE0065037B /* SMSBGView.swift */,
+				65E8A2CB2E44FBEE0065037B /* SMSBolusView.swift */,
+				65E8A2CC2E44FBEE0065037B /* SMSLoopView.swift */,
+				65E8A2CD2E44FBEE0065037B /* SMSProfileView.swift */,
+				65E8A2CE2E44FBEE0065037B /* SMSPumpView.swift */,
+				65E8A2C22E44FAEF0065037B /* SMSCarbsView.swift */,
+				65E8A2C32E44FAEF0065037B /* SMSRemoteService.swift */,
+				65E8A2C42E44FAEF0065037B /* SMSStatusView.swift */,
+				65E8A2C52E44FAEF0065037B /* SMSTargetView.swift */,
+				65E8A2B82E44F6220065037B /* SMSRemoteView.swift */,
+			);
+			path = SMS;
+			sourceTree = "<group>";
+		};
 		6A5880E0B811AF443B05AB02 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -861,6 +900,7 @@
 		DD0C0C6E2C4AFFB800DBADDF /* Remote */ = {
 			isa = PBXGroup;
 			children = (
+				65E8A2BB2E44F6220065037B /* SMS */,
 				DDDF6F4A2D479B6A00884336 /* Nightscout */,
 				DDDF6F482D479AEF00884336 /* NoRemoteView.swift */,
 				DDEF503E2D479B8A00884336 /* LoopAPNS */,
@@ -1870,6 +1910,10 @@
 				DD9ACA102D34129200415D8A /* Task.swift in Sources */,
 				DD4AFB492DB576C200BB593F /* AlarmSettingsView.swift in Sources */,
 				DD7F4C032DD4B92E00D449E9 /* NotLoopingAlarmEditor.swift in Sources */,
+				65E8A2C62E44FAEF0065037B /* SMSStatusView.swift in Sources */,
+				65E8A2C72E44FAEF0065037B /* SMSTargetView.swift in Sources */,
+				65E8A2C82E44FAEF0065037B /* SMSCarbsView.swift in Sources */,
+				65E8A2C92E44FAEF0065037B /* SMSRemoteService.swift in Sources */,
 				DD7F4C1B2DD6501D00D449E9 /* COBCondition.swift in Sources */,
 				DDE75D232DE5E505007C1FC1 /* Glyph.swift in Sources */,
 				DD4878202C7DAF890048F05C /* PushMessage.swift in Sources */,
@@ -1969,6 +2013,11 @@
 				DD7F4BC72DD473A600D449E9 /* FastDropCondition.swift in Sources */,
 				DD7F4C0D2DD51C8100D449E9 /* OverrideEndAlarmEditor.swift in Sources */,
 				DDC7E5432DBD8A1600EB1127 /* SoundFile.swift in Sources */,
+				65E8A2CF2E44FBEE0065037B /* SMSBGView.swift in Sources */,
+				65E8A2D02E44FBEE0065037B /* SMSLoopView.swift in Sources */,
+				65E8A2D12E44FBEE0065037B /* SMSBolusView.swift in Sources */,
+				65E8A2D22E44FBEE0065037B /* SMSPumpView.swift in Sources */,
+				65E8A2D32E44FBEE0065037B /* SMSProfileView.swift in Sources */,
 				DDC7E5442DBD8A1600EB1127 /* BuildExpireAlarmEditor.swift in Sources */,
 				DDC7E5462DBD8A1600EB1127 /* LowBgAlarmEditor.swift in Sources */,
 				DDC7E5472DBD8A1600EB1127 /* AlarmEditor.swift in Sources */,
@@ -1983,6 +2032,7 @@
 				DD4878152C7B75230048F05C /* MealView.swift in Sources */,
 				FC16A97F249969E2003D6245 /* Graphs.swift in Sources */,
 				FC8589BF252B54F500C8FC73 /* Mobileprovision.swift in Sources */,
+				65E8A2BE2E44F6220065037B /* SMSRemoteView.swift in Sources */,
 				DD4878052C7B2C970048F05C /* Storage.swift in Sources */,
 				DD493AE12ACF22FE009A6922 /* Profile.swift in Sources */,
 				DD493ADF2ACF22BB009A6922 /* SAge.swift in Sources */,
