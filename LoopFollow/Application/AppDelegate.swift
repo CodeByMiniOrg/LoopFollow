@@ -44,6 +44,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             UIApplication.shared.registerForRemoteNotifications()
         }
 
+        // Ensure VolumeButtonHandler is initialized so it can receive alarm notifications
+        _ = VolumeButtonHandler.shared
+
         return true
     }
 
