@@ -329,4 +329,5 @@ class PushNotificationManager {
         let urlString = "https://\(host)/3/device/\(deviceToken)"
         return URL(string: urlString)
     }
+
 }
