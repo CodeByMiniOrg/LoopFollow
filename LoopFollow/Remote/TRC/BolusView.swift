@@ -100,7 +100,7 @@ struct BolusView: View {
                                             }
                                         }
                                         Spacer()
-                                        Image(systemName: "arrow.up.circle.fill")
+                                        Image(systemName: "arrow.down.circle.fill")
                                             .foregroundColor(.blue)
                                             .font(.title2)
                                     }
