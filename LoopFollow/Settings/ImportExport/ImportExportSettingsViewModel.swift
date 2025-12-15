@@ -238,33 +238,15 @@ class ImportExportSettingsViewModel: ObservableObject {
         exportedAlarmIds.removeAll()
     }
 
-    // MARK: - iCloud Methods (using CloudKit)
+    // MARK: - iCloud Methods (using Key-Value Storage)
 
-    private let cloudKitRecordType = "AppSettings"
-    private var cloudKitRecordID: CKRecord.ID {
-        CKRecord.ID(recordName: "\(AppConstants.appInstanceId)_settings")
+    private var iCloudSettingsKey: String {
+        "\(AppConstants.appInstanceId)_settings"
     }
 
-    /// Check if CloudKit is available
-    private func checkCloudKitAvailability(completion: @escaping (Bool, String?) -> Void) {
-        CKContainer.default().accountStatus { status, error in
-            DispatchQueue.main.async {
-                switch status {
-                case .available:
-                    completion(true, nil)
-                case .noAccount:
-                    completion(false, "iCloud is not available. Please sign in to iCloud in Settings.")
-                case .restricted:
-                    completion(false, "iCloud access is restricted on this device.")
-                case .couldNotDetermine:
-                    completion(false, "Could not determine iCloud status: \(error?.localizedDescription ?? "Unknown error")")
-                case .temporarilyUnavailable:
-                    completion(false, "iCloud is temporarily unavailable. Please try again later.")
-                @unknown default:
-                    completion(false, "Unknown iCloud status.")
-                }
-            }
-        }
+    /// Check if iCloud Key-Value Storage is available
+    private func isICloudAvailable() -> Bool {
+        return FileManager.default.ubiquityIdentityToken != nil
     }
 
     func exportToiCloud() {
@@ -287,130 +269,86 @@ class ImportExportSettingsViewModel: ObservableObject {
             return
         }
 
-        LogManager.shared.log(category: .general, message: "Attempting to export settings to CloudKit")
-
-        checkCloudKitAvailability { [weak self] available, errorMessage in
-            guard let self = self else { return }
-
-            if !available {
-                self.qrCodeErrorMessage = errorMessage ?? "iCloud is not available."
-                LogManager.shared.log(category: .general, message: "CloudKit not available: \(errorMessage ?? "Unknown")")
-                return
-            }
-
-            let privateDatabase = CKContainer.default().privateCloudDatabase
-
-            // First try to fetch existing record to update it, or create new one
-            privateDatabase.fetch(withRecordID: self.cloudKitRecordID) { [weak self] existingRecord, error in
-                guard let self = self else { return }
-
-                let record: CKRecord
-                if let existing = existingRecord {
-                    record = existing
-                } else {
-                    record = CKRecord(recordType: self.cloudKitRecordType, recordID: self.cloudKitRecordID)
-                }
-
-                record["settingsJSON"] = jsonString as CKRecordValue
-                record["exportDate"] = Date() as CKRecordValue
-                record["appVersion"] = AppVersionManager().version() as CKRecordValue
-
-                privateDatabase.save(record) { [weak self] _, saveError in
-                    DispatchQueue.main.async {
-                        guard let self = self else { return }
-
-                        if let saveError = saveError {
-                            self.qrCodeErrorMessage = "Failed to export to iCloud: \(saveError.localizedDescription)"
-                            LogManager.shared.log(category: .general, message: "CloudKit save failed: \(saveError.localizedDescription)")
-                            return
-                        }
-
-                        // Build export details for the success alert
-                        var details: [String] = []
-
-                        if !nightscoutSettings.url.isEmpty {
-                            details.append("Nightscout: \(nightscoutSettings.url)")
-                        }
-                        if !dexcomSettings.userName.isEmpty {
-                            details.append("Dexcom: \(dexcomSettings.userName)")
-                        }
-                        if remoteSettings.remoteType != .none {
-                            details.append("Remote: \(remoteSettings.remoteType.rawValue)")
-                        }
-                        if !alarmSettings.alarms.isEmpty {
-                            details.append("Alarms: \(alarmSettings.alarms.count) alarm(s)")
-                        }
-
-                        self.exportSuccessDetails = details
-                        self.exportSuccessMessage = "Settings saved to iCloud"
-                        self.showExportSuccessAlert = true
-                        self.qrCodeErrorMessage = ""
-
-                        LogManager.shared.log(category: .general, message: "All settings exported to CloudKit successfully")
-                    }
-                }
-            }
+        guard isICloudAvailable() else {
+            qrCodeErrorMessage = "iCloud is not available. Please sign in to iCloud in Settings."
+            LogManager.shared.log(category: .general, message: "iCloud not available for export")
+            return
         }
+
+        LogManager.shared.log(category: .general, message: "Attempting to export settings to iCloud Key-Value Storage")
+
+        let store = NSUbiquitousKeyValueStore.default
+        store.set(jsonString, forKey: iCloudSettingsKey)
+        store.set(Date(), forKey: "\(iCloudSettingsKey)_date")
+        store.set(AppVersionManager().version(), forKey: "\(iCloudSettingsKey)_version")
+
+        // Explicitly synchronize to push changes
+        let synchronized = store.synchronize()
+        LogManager.shared.log(category: .general, message: "iCloud KVS synchronize called, result: \(synchronized)")
+
+        // Build export details for the success alert
+        var details: [String] = []
+
+        if !nightscoutSettings.url.isEmpty {
+            details.append("Nightscout: \(nightscoutSettings.url)")
+        }
+        if !dexcomSettings.userName.isEmpty {
+            details.append("Dexcom: \(dexcomSettings.userName)")
+        }
+        if remoteSettings.remoteType != .none {
+            details.append("Remote: \(remoteSettings.remoteType.rawValue)")
+        }
+        if !alarmSettings.alarms.isEmpty {
+            details.append("Alarms: \(alarmSettings.alarms.count) alarm(s)")
+        }
+
+        exportSuccessDetails = details
+        exportSuccessMessage = "Settings saved to iCloud"
+        showExportSuccessAlert = true
+        qrCodeErrorMessage = ""
+
+        LogManager.shared.log(category: .general, message: "All settings exported to iCloud Key-Value Storage successfully")
     }
 
     func importFromiCloud() {
-        LogManager.shared.log(category: .general, message: "Attempting to import settings from CloudKit")
+        LogManager.shared.log(category: .general, message: "Attempting to import settings from iCloud Key-Value Storage")
 
-        checkCloudKitAvailability { [weak self] available, errorMessage in
-            guard let self = self else { return }
-
-            if !available {
-                self.importNotFoundMessage = errorMessage ?? "iCloud is not available."
-                self.showImportNotFoundAlert = true
-                LogManager.shared.log(category: .general, message: "CloudKit not available for import: \(errorMessage ?? "Unknown")")
-                return
-            }
-
-            let privateDatabase = CKContainer.default().privateCloudDatabase
-
-            privateDatabase.fetch(withRecordID: self.cloudKitRecordID) { [weak self] record, error in
-                DispatchQueue.main.async {
-                    guard let self = self else { return }
-
-                    if let error = error {
-                        if let ckError = error as? CKError, ckError.code == .unknownItem {
-                            self.importNotFoundMessage = "No settings file found in iCloud.\n\nMake sure you have previously exported settings to iCloud from this app."
-                            self.showImportNotFoundAlert = true
-                            LogManager.shared.log(category: .general, message: "No CloudKit record found")
-                        } else {
-                            self.qrCodeErrorMessage = "Failed to import from iCloud: \(error.localizedDescription)"
-                            LogManager.shared.log(category: .general, message: "CloudKit fetch failed: \(error.localizedDescription)")
-                        }
-                        return
-                    }
-
-                    guard let record = record,
-                          let jsonString = record["settingsJSON"] as? String,
-                          let jsonData = jsonString.data(using: .utf8) else {
-                        self.importNotFoundMessage = "No settings file found in iCloud.\n\nMake sure you have previously exported settings to iCloud from this app."
-                        self.showImportNotFoundAlert = true
-                        return
-                    }
-
-                    LogManager.shared.log(category: .general, message: "Settings record found in CloudKit, attempting to decode")
-
-                    guard let settings = SettingsMigrationManager.migrateSettings(jsonData) else {
-                        self.qrCodeErrorMessage = "Failed to decode settings from iCloud"
-                        return
-                    }
-
-                    // Check version compatibility
-                    if !SettingsMigrationManager.isCompatibleVersion(settings.appVersion) {
-                        self.qrCodeErrorMessage = SettingsMigrationManager.getCompatibilityMessage(for: settings.appVersion)
-                    }
-
-                    // Store settings and create preview for confirmation
-                    self.pendingImportSettings = settings
-                    self.pendingImportSource = "iCloud"
-                    self.createImportPreview(from: settings)
-                }
-            }
+        guard isICloudAvailable() else {
+            importNotFoundMessage = "iCloud is not available.\n\nPlease sign in to iCloud in Settings."
+            showImportNotFoundAlert = true
+            LogManager.shared.log(category: .general, message: "iCloud not available for import")
+            return
         }
+
+        let store = NSUbiquitousKeyValueStore.default
+
+        // Synchronize to get latest from iCloud
+        store.synchronize()
+
+        guard let jsonString = store.string(forKey: iCloudSettingsKey),
+              let jsonData = jsonString.data(using: .utf8) else {
+            importNotFoundMessage = "No settings file found in iCloud.\n\nMake sure you have previously exported settings to iCloud from this app."
+            showImportNotFoundAlert = true
+            LogManager.shared.log(category: .general, message: "No settings found in iCloud Key-Value Storage")
+            return
+        }
+
+        LogManager.shared.log(category: .general, message: "Settings found in iCloud Key-Value Storage, attempting to decode")
+
+        guard let settings = SettingsMigrationManager.migrateSettings(jsonData) else {
+            qrCodeErrorMessage = "Failed to decode settings from iCloud"
+            return
+        }
+
+        // Check version compatibility
+        if !SettingsMigrationManager.isCompatibleVersion(settings.appVersion) {
+            qrCodeErrorMessage = SettingsMigrationManager.getCompatibilityMessage(for: settings.appVersion)
+        }
+
+        // Store settings and create preview for confirmation
+        pendingImportSettings = settings
+        pendingImportSource = "iCloud"
+        createImportPreview(from: settings)
     }
 
     private func createImportPreview(from settings: CombinedSettingsExport) {
