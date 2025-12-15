@@ -3,7 +3,6 @@
 
 import Foundation
 import SwiftUI
-import CloudKit
 
 struct ImportPreview {
     let nightscoutURL: String?
