@@ -57,62 +57,47 @@ class MoreMenuViewController: UIViewController {
     private func updateMenuItems() {
         menuItems = []
 
-        // Always add Settings
-        menuItems.append(MenuItem(
-            title: "Settings",
-            icon: "gear",
-            action: { [weak self] in
-                self?.openSettings()
-            }
-        ))
+        // Get items that are in the "more" menu
+        let itemsInMore = Storage.shared.itemsInMore()
 
-        // Always add Treatments
-        menuItems.append(MenuItem(
-            title: "Treatments",
-            icon: "cross.case.fill",
-            action: { [weak self] in
-                self?.openTreatments()
-            }
-        ))
-
-        // Always add Statistics
-        menuItems.append(MenuItem(
-            title: "Statistics",
-            icon: "chart.bar.fill",
-            action: { [weak self] in
-                self?.openAggregatedStats()
-            }
-        ))
-
-        // Add items based on their positions
-        if Storage.shared.alarmsPosition.value == .more {
+        // Always add Settings first if it's in More
+        if itemsInMore.contains(.settings) {
             menuItems.append(MenuItem(
-                title: "Alarms",
-                icon: "alarm",
+                title: TabItem.settings.displayName,
+                icon: TabItem.settings.icon,
                 action: { [weak self] in
-                    self?.openAlarms()
+                    self?.openSettings()
                 }
             ))
         }
 
-        if Storage.shared.remotePosition.value == .more {
+        // Add remaining items (excluding Settings which was already added)
+        for item in itemsInMore where item != .settings {
             menuItems.append(MenuItem(
-                title: "Remote",
-                icon: "antenna.radiowaves.left.and.right",
+                title: item.displayName,
+                icon: item.icon,
                 action: { [weak self] in
-                    self?.openRemote()
+                    self?.openItem(item)
                 }
             ))
         }
+    }
 
-        if Storage.shared.nightscoutPosition.value == .more {
-            menuItems.append(MenuItem(
-                title: "Nightscout",
-                icon: "safari",
-                action: { [weak self] in
-                    self?.openNightscout()
-                }
-            ))
+    private func openItem(_ item: TabItem) {
+        switch item {
+        case .home:
+            // Home should not be in More menu, but handle gracefully
+            break
+        case .alarms:
+            openAlarms()
+        case .remote:
+            openRemote()
+        case .nightscout:
+            openNightscout()
+        case .snoozer:
+            openSnoozer()
+        case .settings:
+            openSettings()
         }
     }
 
@@ -203,18 +188,19 @@ class MoreMenuViewController: UIViewController {
         present(navController, animated: true)
     }
 
-    private func openTreatments() {
-        let treatmentsVC = UIHostingController(rootView: TreatmentsView())
-        let navController = UINavigationController(rootViewController: treatmentsVC)
+    private func openSnoozer() {
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        let snoozerVC = storyboard.instantiateViewController(withIdentifier: "SnoozerViewController")
+        let navController = UINavigationController(rootViewController: snoozerVC)
 
         // Apply dark mode if needed
         if Storage.shared.forceDarkMode.value {
-            treatmentsVC.overrideUserInterfaceStyle = .dark
+            snoozerVC.overrideUserInterfaceStyle = .dark
             navController.overrideUserInterfaceStyle = .dark
         }
 
         // Add a close button
-        treatmentsVC.navigationItem.rightBarButtonItem = UIBarButtonItem(
+        snoozerVC.navigationItem.rightBarButtonItem = UIBarButtonItem(
             barButtonSystemItem: .done,
             target: self,
             action: #selector(dismissModal)
@@ -222,52 +208,6 @@ class MoreMenuViewController: UIViewController {
 
         navController.modalPresentationStyle = .fullScreen
         present(navController, animated: true)
-    }
-
-    private func openAggregatedStats() {
-        guard let mainVC = getMainViewController() else {
-            presentSimpleAlert(title: "Error", message: "Unable to access data")
-            return
-        }
-
-        let statsVC = UIHostingController(
-            rootView: AggregatedStatsView(viewModel: AggregatedStatsViewModel(mainViewController: mainVC))
-        )
-        let navController = UINavigationController(rootViewController: statsVC)
-
-        // Apply dark mode if needed
-        if Storage.shared.forceDarkMode.value {
-            statsVC.overrideUserInterfaceStyle = .dark
-            navController.overrideUserInterfaceStyle = .dark
-        }
-
-        // Add a close button
-        statsVC.navigationItem.rightBarButtonItem = UIBarButtonItem(
-            barButtonSystemItem: .done,
-            target: self,
-            action: #selector(dismissModal)
-        )
-
-        navController.modalPresentationStyle = .fullScreen
-        present(navController, animated: true)
-    }
-
-    private func getMainViewController() -> MainViewController? {
-        // Try to find MainViewController in the view hierarchy
-        guard let tabBarController = tabBarController else { return nil }
-
-        for vc in tabBarController.viewControllers ?? [] {
-            if let mainVC = vc as? MainViewController {
-                return mainVC
-            }
-            if let navVC = vc as? UINavigationController,
-               let mainVC = navVC.viewControllers.first as? MainViewController
-            {
-                return mainVC
-            }
-        }
-
-        return nil
     }
 
     @objc private func dismissModal() {

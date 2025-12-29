@@ -15,11 +15,6 @@ func IsNightscoutEnabled() -> Bool {
     return !Storage.shared.url.value.isEmpty
 }
 
-private enum SecondTab {
-    case remote
-    case alarms
-}
-
 class MainViewController: UIViewController, UITableViewDataSource, ChartViewDelegate, UNUserNotificationCenterDelegate, UIScrollViewDelegate {
     @IBOutlet var BGText: UILabel!
     @IBOutlet var DeltaText: UILabel!
@@ -152,6 +147,11 @@ class MainViewController: UIViewController, UITableViewDataSource, ChartViewDele
         if Storage.shared.migrationStep.value < 2 {
             Storage.shared.migrateStep2()
             Storage.shared.migrationStep.value = 2
+        }
+
+        if Storage.shared.migrationStep.value < 3 {
+            Storage.shared.migrateStep3()
+            Storage.shared.migrationStep.value = 3
         }
 
         // Synchronize info types to ensure arrays are the correct size
@@ -305,26 +305,20 @@ class MainViewController: UIViewController, UITableViewDataSource, ChartViewDele
             }
             .store(in: &cancellables)
 
-        Storage.shared.alarmsPosition.$value
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.setupTabBar()
-            }
-            .store(in: &cancellables)
-
-        Storage.shared.remotePosition.$value
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.setupTabBar()
-            }
-            .store(in: &cancellables)
-
-        Storage.shared.nightscoutPosition.$value
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.setupTabBar()
-            }
-            .store(in: &cancellables)
+        // Observe all tab position changes with debouncing to handle batch updates
+        Publishers.Merge6(
+            Storage.shared.homePosition.$value.map { _ in () },
+            Storage.shared.alarmsPosition.$value.map { _ in () },
+            Storage.shared.remotePosition.$value.map { _ in () },
+            Storage.shared.nightscoutPosition.$value.map { _ in () },
+            Storage.shared.snoozerPosition.$value.map { _ in () },
+            Storage.shared.settingsPosition.$value.map { _ in () }
+        )
+        .debounce(for: .milliseconds(100), scheduler: DispatchQueue.main)
+        .sink { [weak self] _ in
+            self?.setupTabBar()
+        }
+        .store(in: &cancellables)
 
         Storage.shared.url.$value
             .receive(on: DispatchQueue.main)
@@ -518,76 +512,44 @@ class MainViewController: UIViewController, UITableViewDataSource, ChartViewDele
     private func setupTabBar() {
         guard let tabBarController = tabBarController else { return }
 
-        // Store current selection before making changes
-        let currentSelectedIndex = tabBarController.selectedIndex
-
-        // Check if we need to handle More tab disappearing
-        let wasInMoreTab = currentSelectedIndex == 4 &&
-            tabBarController.viewControllers?.last is MoreMenuViewController
         let willHaveMoreTab = hasItemsInMore()
 
-        // If currently in More tab and it's going away, we need to handle this carefully
-        if wasInMoreTab, !willHaveMoreTab {
-            // First, dismiss any modals that might be open
-            if let presented = tabBarController.presentedViewController {
-                presented.dismiss(animated: false) { [weak self] in
-                    // After dismissal, rebuild tabs with home selected
-                    self?.rebuildTabs(tabBarController: tabBarController,
-                                      willHaveMoreTab: willHaveMoreTab,
-                                      selectedIndex: 0)
-                }
-                return
+        // Check if there's a presented modal that needs dismissing
+        if let presented = tabBarController.presentedViewController {
+            presented.dismiss(animated: false) { [weak self] in
+                self?.rebuildTabs(tabBarController: tabBarController, willHaveMoreTab: willHaveMoreTab)
             }
+            return
         }
 
-        // For all other cases, rebuild tabs normally
-        rebuildTabs(tabBarController: tabBarController,
-                    willHaveMoreTab: willHaveMoreTab,
-                    selectedIndex: wasInMoreTab && !willHaveMoreTab ? 0 : currentSelectedIndex)
+        rebuildTabs(tabBarController: tabBarController, willHaveMoreTab: willHaveMoreTab)
     }
 
-    private func rebuildTabs(tabBarController: UITabBarController,
-                             willHaveMoreTab: Bool,
-                             selectedIndex: Int)
-    {
+    private func rebuildTabs(tabBarController: UITabBarController, willHaveMoreTab: Bool) {
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         var viewControllers: [UIViewController] = []
 
-        // Tab 0 - Home (always)
-        viewControllers.append(self)
-
-        // Tab 1 - Dynamic based on what's assigned to position2
-        if let vc = createViewController(for: .position2, storyboard: storyboard) {
-            viewControllers.append(vc)
+        // Build tabs for each position (1-5)
+        for position in TabPosition.tabBarPositions {
+            if let item = Storage.shared.tabItem(at: position) {
+                if let vc = createViewController(for: item, position: position, storyboard: storyboard) {
+                    viewControllers.append(vc)
+                }
+            }
         }
 
-        // Tab 2 - Snoozer (always)
-        let snoozerVC = storyboard.instantiateViewController(withIdentifier: "SnoozerViewController")
-        snoozerVC.tabBarItem = UITabBarItem(title: "Snoozer", image: UIImage(systemName: "zzz"), tag: 2)
-        viewControllers.append(snoozerVC)
-
-        // Tab 3 - Dynamic based on what's assigned to position4
-        if let vc = createViewController(for: .position4, storyboard: storyboard) {
-            viewControllers.append(vc)
-        }
-
-        // Tab 4 - Settings or More
+        // Add More tab if there are items in the more menu
         if willHaveMoreTab {
             let moreVC = MoreMenuViewController()
-            moreVC.tabBarItem = UITabBarItem(title: "More", image: UIImage(systemName: "ellipsis"), tag: 4)
+            moreVC.tabBarItem = UITabBarItem(title: "More", image: UIImage(systemName: "ellipsis"), tag: 5)
             viewControllers.append(moreVC)
-        } else {
-            let settingsVC = SettingsViewController()
-            settingsVC.tabBarItem = UITabBarItem(title: "Settings", image: UIImage(systemName: "gear"), tag: 4)
-            viewControllers.append(settingsVC)
         }
 
         // Update view controllers without animation to prevent glitches
         tabBarController.setViewControllers(viewControllers, animated: false)
 
-        // Restore selection if valid, otherwise default to home
-        let safeIndex = min(selectedIndex, viewControllers.count - 1)
-        tabBarController.selectedIndex = max(0, safeIndex)
+        // Always select first tab (position 1) - this is the "main screen"
+        tabBarController.selectedIndex = 0
 
         updateNightscoutTabState()
     }
@@ -605,32 +567,44 @@ class MainViewController: UIViewController, UITableViewDataSource, ChartViewDele
         return nil
     }
 
-    private func createViewController(for position: TabPosition, storyboard: UIStoryboard) -> UIViewController? {
-        if Storage.shared.alarmsPosition.value == position {
+    private func createViewController(for item: TabItem, position: TabPosition, storyboard: UIStoryboard) -> UIViewController? {
+        let tag = position.tabIndex ?? 0
+
+        switch item {
+        case .home:
+            // Return self (MainViewController) for home
+            tabBarItem = UITabBarItem(title: "Home", image: UIImage(systemName: item.icon), tag: tag)
+            return self
+
+        case .alarms:
             let vc = storyboard.instantiateViewController(withIdentifier: "AlarmViewController")
-            vc.tabBarItem = UITabBarItem(title: "Alarms", image: UIImage(systemName: "alarm"), tag: position == .position2 ? 1 : 3)
+            vc.tabBarItem = UITabBarItem(title: item.displayName, image: UIImage(systemName: item.icon), tag: tag)
             return vc
-        }
 
-        if Storage.shared.remotePosition.value == position {
+        case .remote:
             let vc = storyboard.instantiateViewController(withIdentifier: "RemoteViewController")
-            vc.tabBarItem = UITabBarItem(title: "Remote", image: UIImage(systemName: "antenna.radiowaves.left.and.right"), tag: position == .position2 ? 1 : 3)
+            vc.tabBarItem = UITabBarItem(title: item.displayName, image: UIImage(systemName: item.icon), tag: tag)
             return vc
-        }
 
-        if Storage.shared.nightscoutPosition.value == position {
+        case .nightscout:
             let vc = storyboard.instantiateViewController(withIdentifier: "NightscoutViewController")
-            vc.tabBarItem = UITabBarItem(title: "Nightscout", image: UIImage(systemName: "safari"), tag: position == .position2 ? 1 : 3)
+            vc.tabBarItem = UITabBarItem(title: item.displayName, image: UIImage(systemName: item.icon), tag: tag)
+            return vc
+
+        case .snoozer:
+            let vc = storyboard.instantiateViewController(withIdentifier: "SnoozerViewController")
+            vc.tabBarItem = UITabBarItem(title: item.displayName, image: UIImage(systemName: item.icon), tag: tag)
+            return vc
+
+        case .settings:
+            let vc = SettingsViewController()
+            vc.tabBarItem = UITabBarItem(title: item.displayName, image: UIImage(systemName: item.icon), tag: tag)
             return vc
         }
-
-        return nil
     }
 
     private func hasItemsInMore() -> Bool {
-        return Storage.shared.alarmsPosition.value == .more ||
-            Storage.shared.remotePosition.value == .more ||
-            Storage.shared.nightscoutPosition.value == .more
+        return !Storage.shared.itemsInMore().isEmpty
     }
 
     // Update the Home Screen Quick Action for toggling the "Speak BG" feature based on the current speakBG setting.

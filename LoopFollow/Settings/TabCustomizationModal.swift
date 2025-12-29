@@ -7,74 +7,181 @@ struct TabCustomizationModal: View {
     @Binding var isPresented: Bool
     let onApply: () -> Void
 
-    // Local state for editing
-    @State private var alarmsPosition: TabPosition
-    @State private var remotePosition: TabPosition
-    @State private var nightscoutPosition: TabPosition
+    // The ordered list of items in the tab bar (positions 1-5)
+    @State private var tabBarItems: [TabItem]
+    // Items in the "More" menu
+    @State private var moreItems: [TabItem]
+    // Items that are hidden
+    @State private var hiddenItems: [TabItem]
+
     @State private var hasChanges = false
 
-    // Store original values to detect changes
-    private let originalAlarmsPosition: TabPosition
-    private let originalRemotePosition: TabPosition
-    private let originalNightscoutPosition: TabPosition
+    // Store originals for comparison
+    private let originalTabBarItems: [TabItem]
+    private let originalMoreItems: [TabItem]
+    private let originalHiddenItems: [TabItem]
 
     init(isPresented: Binding<Bool>, onApply: @escaping () -> Void) {
         _isPresented = isPresented
         self.onApply = onApply
 
-        // Initialize with current values
-        let currentAlarms = Storage.shared.alarmsPosition.value
-        let currentRemote = Storage.shared.remotePosition.value
-        let currentNightscout = Storage.shared.nightscoutPosition.value
+        // Build current state from storage
+        var tabBar: [TabItem] = []
+        var more: [TabItem] = []
+        var hidden: [TabItem] = []
+        var assignedItems = Set<TabItem>()
 
-        _alarmsPosition = State(initialValue: currentAlarms)
-        _remotePosition = State(initialValue: currentRemote)
-        _nightscoutPosition = State(initialValue: currentNightscout)
+        // Get items for each position in the tab bar (in order)
+        for position in TabPosition.tabBarPositions {
+            if let item = Storage.shared.tabItem(at: position), !assignedItems.contains(item) {
+                tabBar.append(item)
+                assignedItems.insert(item)
+            }
+        }
 
-        originalAlarmsPosition = currentAlarms
-        originalRemotePosition = currentRemote
-        originalNightscoutPosition = currentNightscout
+        // Assign remaining items to more or hidden based on their stored position
+        for item in TabItem.allCases where !assignedItems.contains(item) {
+            let pos = Storage.shared.position(for: item)
+            if pos == .disabled {
+                hidden.append(item)
+            } else {
+                // Everything else (including .more and any orphaned tab positions) goes to More
+                more.append(item)
+            }
+            assignedItems.insert(item)
+        }
+
+        _tabBarItems = State(initialValue: tabBar)
+        _moreItems = State(initialValue: more)
+        _hiddenItems = State(initialValue: hidden)
+
+        originalTabBarItems = tabBar
+        originalMoreItems = more
+        originalHiddenItems = hidden
+    }
+
+    private var canAddToTabBar: Bool {
+        tabBarItems.count < 5
     }
 
     var body: some View {
         NavigationView {
-            Form {
-                Section("Tab Positions") {
-                    TabPositionRow(
-                        title: "Alarms",
-                        icon: "alarm",
-                        position: $alarmsPosition,
-                        otherPositions: [remotePosition, nightscoutPosition]
-                    )
-                    .onChange(of: alarmsPosition) { _ in checkForChanges() }
-
-                    TabPositionRow(
-                        title: "Remote",
-                        icon: "antenna.radiowaves.left.and.right",
-                        position: $remotePosition,
-                        otherPositions: [alarmsPosition, nightscoutPosition]
-                    )
-                    .onChange(of: remotePosition) { _ in checkForChanges() }
-
-                    TabPositionRow(
-                        title: "Nightscout",
-                        icon: "safari",
-                        position: $nightscoutPosition,
-                        otherPositions: [alarmsPosition, remotePosition]
-                    )
-                    .onChange(of: nightscoutPosition) { _ in checkForChanges() }
+            List {
+                Section {
+                    Text("Drag to reorder tabs. The first tab is shown when the app opens.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
 
                 Section {
-                    Text("• Tab 2 and Tab 4 can each hold one item")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Text("• Items in 'More Menu' appear under the last tab")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Text("• Hidden items are not accessible")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    ForEach(tabBarItems) { item in
+                        TabItemRowView(item: item)
+                    }
+                    .onMove { from, to in
+                        tabBarItems.move(fromOffsets: from, toOffset: to)
+                        checkForChanges()
+                    }
+                    .onDelete { indexSet in
+                        // Move deleted items to More
+                        let items = indexSet.map { tabBarItems[$0] }
+                        tabBarItems.remove(atOffsets: indexSet)
+                        moreItems.append(contentsOf: items)
+                        checkForChanges()
+                    }
+                } header: {
+                    HStack {
+                        Text("Tab Bar")
+                        Spacer()
+                        Text("\(tabBarItems.count)/5")
+                            .foregroundColor(tabBarItems.count == 5 ? .orange : .secondary)
+                    }
+                }
+
+                if !moreItems.isEmpty {
+                    Section {
+                        ForEach(moreItems) { item in
+                            HStack {
+                                TabItemRowView(item: item)
+
+                                if canAddToTabBar {
+                                    Button {
+                                        withAnimation {
+                                            addToTabBar(item)
+                                        }
+                                    } label: {
+                                        Image(systemName: "plus.circle.fill")
+                                            .foregroundColor(.green)
+                                            .imageScale(.large)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) {
+                                    moveToHidden(item, from: &moreItems)
+                                } label: {
+                                    Label("Hide", systemImage: "eye.slash")
+                                }
+                            }
+                        }
+                        .onMove { from, to in
+                            moreItems.move(fromOffsets: from, toOffset: to)
+                            checkForChanges()
+                        }
+                    } header: {
+                        HStack {
+                            Text("More Menu")
+                            Spacer()
+                            if canAddToTabBar {
+                                Text("Tap + to add to Tab Bar")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                }
+
+                if !hiddenItems.isEmpty {
+                    Section("Hidden") {
+                        ForEach(hiddenItems) { item in
+                            HStack {
+                                TabItemRowView(item: item)
+                                    .opacity(0.6)
+
+                                Button {
+                                    withAnimation {
+                                        moveToMore(item, from: &hiddenItems)
+                                    }
+                                } label: {
+                                    Image(systemName: "arrow.uturn.up.circle.fill")
+                                        .foregroundColor(.orange)
+                                        .imageScale(.large)
+                                }
+                                .buttonStyle(.plain)
+
+                                if canAddToTabBar {
+                                    Button {
+                                        withAnimation {
+                                            moveToTabBar(item, from: &hiddenItems)
+                                        }
+                                    } label: {
+                                        Image(systemName: "plus.circle.fill")
+                                            .foregroundColor(.green)
+                                            .imageScale(.large)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if moreItems.isEmpty && hiddenItems.isEmpty {
+                    Section {
+                        Text("All items are in the tab bar. Swipe left on a tab to remove it.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
 
                 if hasChanges {
@@ -85,6 +192,8 @@ struct TabCustomizationModal: View {
                     }
                 }
             }
+            .listStyle(.insetGrouped)
+            .environment(\.editMode, .constant(.active))
             .navigationTitle("Tab Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -106,17 +215,62 @@ struct TabCustomizationModal: View {
         .preferredColorScheme(Storage.shared.forceDarkMode.value ? .dark : nil)
     }
 
+    private func addToTabBar(_ item: TabItem) {
+        guard canAddToTabBar else { return }
+        moreItems.removeAll { $0 == item }
+        tabBarItems.append(item)
+        checkForChanges()
+    }
+
+    private func moveToTabBar(_ item: TabItem, from source: inout [TabItem]) {
+        guard canAddToTabBar else { return }
+        source.removeAll { $0 == item }
+        tabBarItems.append(item)
+        checkForChanges()
+    }
+
+    private func moveToMore(_ item: TabItem, from source: inout [TabItem]) {
+        source.removeAll { $0 == item }
+        moreItems.append(item)
+        checkForChanges()
+    }
+
+    private func moveToHidden(_ item: TabItem, from source: inout [TabItem]) {
+        source.removeAll { $0 == item }
+        hiddenItems.append(item)
+        checkForChanges()
+    }
+
     private func checkForChanges() {
-        hasChanges = alarmsPosition != originalAlarmsPosition ||
-            remotePosition != originalRemotePosition ||
-            nightscoutPosition != originalNightscoutPosition
+        hasChanges = tabBarItems != originalTabBarItems ||
+            moreItems != originalMoreItems ||
+            hiddenItems != originalHiddenItems
     }
 
     private func applyChanges() {
-        // Save the new positions
-        Storage.shared.alarmsPosition.value = alarmsPosition
-        Storage.shared.remotePosition.value = remotePosition
-        Storage.shared.nightscoutPosition.value = nightscoutPosition
+        // Save tab bar positions (index 0 = position1, etc.)
+        for (index, item) in tabBarItems.enumerated() {
+            let position: TabPosition
+            switch index {
+            case 0: position = .position1
+            case 1: position = .position2
+            case 2: position = .position3
+            case 3: position = .position4
+            case 4: position = .position5
+            default: position = .more
+            }
+            Storage.shared.setPosition(position, for: item)
+        }
+
+        // Save more items
+        for item in moreItems {
+            Storage.shared.setPosition(.more, for: item)
+        }
+
+        // Save hidden items
+        for item in hiddenItems {
+            Storage.shared.setPosition(.disabled, for: item)
+        }
 
         // Dismiss the modal
         isPresented = false
@@ -128,40 +282,19 @@ struct TabCustomizationModal: View {
     }
 }
 
-struct TabPositionRow: View {
-    let title: String
-    let icon: String
-    @Binding var position: TabPosition
-    let otherPositions: [TabPosition]
-
-    var availablePositions: [TabPosition] {
-        TabPosition.allCases.filter { tabPosition in
-            // Always allow current position and disabled/more
-            if tabPosition == position || tabPosition == .more || tabPosition == .disabled {
-                return true
-            }
-            // Otherwise, only allow if not taken by another position
-            return !otherPositions.contains(tabPosition)
-        }
-    }
+struct TabItemRowView: View {
+    let item: TabItem
 
     var body: some View {
         HStack {
-            Image(systemName: icon)
+            Image(systemName: item.icon)
                 .frame(width: 30)
                 .foregroundColor(.accentColor)
 
-            Text(title)
+            Text(item.displayName)
 
             Spacer()
-
-            Picker(title, selection: $position) {
-                ForEach(availablePositions, id: \.self) { pos in
-                    Text(pos.displayName).tag(pos)
-                }
-            }
-            .pickerStyle(.menu)
-            .labelsHidden()
         }
+        .contentShape(Rectangle())
     }
 }
