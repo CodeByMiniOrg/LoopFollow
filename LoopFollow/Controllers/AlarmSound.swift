@@ -88,7 +88,8 @@ class AlarmSound {
             audioPlayer = try AVAudioPlayer(contentsOf: soundURL)
             audioPlayer!.delegate = audioPlayerDelegate
 
-            try AVAudioSession.sharedInstance().setCategory(AVAudioSession.Category(rawValue: convertFromAVAudioSessionCategory(AVAudioSession.Category.playback)))
+            // Use simple playback category for CarPlay compatibility
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
             try AVAudioSession.sharedInstance().setActive(true)
 
             audioPlayer?.numberOfLoops = 0
@@ -126,7 +127,8 @@ class AlarmSound {
             audioPlayer = try AVAudioPlayer(contentsOf: soundURL)
             audioPlayer!.delegate = audioPlayerDelegate
 
-            try AVAudioSession.sharedInstance().setCategory(AVAudioSession.Category(rawValue: convertFromAVAudioSessionCategory(AVAudioSession.Category.playback)))
+            // Use simple playback category for CarPlay compatibility
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
             try AVAudioSession.sharedInstance().setActive(true)
 
             // Only use numberOfLoops if we're not using delay-based repeating
@@ -213,7 +215,8 @@ class AlarmSound {
             audioPlayer = try AVAudioPlayer(contentsOf: soundURL)
             audioPlayer!.delegate = audioPlayerDelegate
 
-            try AVAudioSession.sharedInstance().setCategory(AVAudioSession.Category(rawValue: convertFromAVAudioSessionCategory(AVAudioSession.Category.playback)))
+            // Use simple playback category for CarPlay compatibility
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
             try AVAudioSession.sharedInstance().setActive(true)
 
             // Play endless loops
@@ -262,8 +265,13 @@ class AlarmSound {
 
     fileprivate static func enableAudio() {
         do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: .mixWithOthers)
+            // Use playback category without any options for maximum compatibility
+            // This allows audio to route to CarPlay while supporting remote commands
+            // No .mixWithOthers = alarm gets full priority
+            // No .allowBluetooth flags = avoid CarPlay incompatibility
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
             try AVAudioSession.sharedInstance().setActive(true)
+            LogManager.shared.log(category: .alarm, message: "Audio session configured for alarm playback")
         } catch {
             LogManager.shared.log(category: .alarm, message: "Enable audio error: \(error)")
         }
