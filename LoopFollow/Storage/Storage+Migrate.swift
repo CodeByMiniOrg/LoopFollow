@@ -4,6 +4,21 @@
 import Foundation
 
 extension Storage {
+    func migrateStep3() {
+        homePosition.value = .position1
+        snoozerPosition.value = .position3
+
+        let hasMoreItems = alarmsPosition.value == .more ||
+            remotePosition.value == .more ||
+            nightscoutPosition.value == .more
+
+        if hasMoreItems {
+            settingsPosition.value = .more
+        } else {
+            settingsPosition.value = .position5
+        }
+    }
+
     func migrateStep2() {
         // Migrate from old system to new position-based system
         if remoteType.value != .none {

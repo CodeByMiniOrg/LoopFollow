@@ -57,44 +57,47 @@ class MoreMenuViewController: UIViewController {
     private func updateMenuItems() {
         menuItems = []
 
-        // Always add Settings
-        menuItems.append(MenuItem(
-            title: "Settings",
-            icon: "gear",
-            action: { [weak self] in
-                self?.openSettings()
-            }
-        ))
+        // Get items that are in the "more" menu
+        let itemsInMore = Storage.shared.itemsInMore()
 
-        // Add items based on their positions
-        if Storage.shared.alarmsPosition.value == .more {
+        // Always add Settings first if it's in More
+        if itemsInMore.contains(.settings) {
             menuItems.append(MenuItem(
-                title: "Alarms",
-                icon: "alarm",
+                title: TabItem.settings.displayName,
+                icon: TabItem.settings.icon,
                 action: { [weak self] in
-                    self?.openAlarms()
+                    self?.openSettings()
                 }
             ))
         }
 
-        if Storage.shared.remotePosition.value == .more {
+        // Add remaining items (excluding Settings which was already added)
+        for item in itemsInMore where item != .settings {
             menuItems.append(MenuItem(
-                title: "Remote",
-                icon: "antenna.radiowaves.left.and.right",
+                title: item.displayName,
+                icon: item.icon,
                 action: { [weak self] in
-                    self?.openRemote()
+                    self?.openItem(item)
                 }
             ))
         }
+    }
 
-        if Storage.shared.nightscoutPosition.value == .more {
-            menuItems.append(MenuItem(
-                title: "Nightscout",
-                icon: "safari",
-                action: { [weak self] in
-                    self?.openNightscout()
-                }
-            ))
+    private func openItem(_ item: TabItem) {
+        switch item {
+        case .home:
+            // Home should not be in More menu, but handle gracefully
+            break
+        case .alarms:
+            openAlarms()
+        case .remote:
+            openRemote()
+        case .nightscout:
+            openNightscout()
+        case .snoozer:
+            openSnoozer()
+        case .settings:
+            openSettings()
         }
     }
 
@@ -176,6 +179,28 @@ class MoreMenuViewController: UIViewController {
 
         // Add a close button
         nightscoutVC.navigationItem.rightBarButtonItem = UIBarButtonItem(
+            barButtonSystemItem: .done,
+            target: self,
+            action: #selector(dismissModal)
+        )
+
+        navController.modalPresentationStyle = .fullScreen
+        present(navController, animated: true)
+    }
+
+    private func openSnoozer() {
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        let snoozerVC = storyboard.instantiateViewController(withIdentifier: "SnoozerViewController")
+        let navController = UINavigationController(rootViewController: snoozerVC)
+
+        // Apply dark mode if needed
+        if Storage.shared.forceDarkMode.value {
+            snoozerVC.overrideUserInterfaceStyle = .dark
+            navController.overrideUserInterfaceStyle = .dark
+        }
+
+        // Add a close button
+        snoozerVC.navigationItem.rightBarButtonItem = UIBarButtonItem(
             barButtonSystemItem: .done,
             target: self,
             action: #selector(dismissModal)
